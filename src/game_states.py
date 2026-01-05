@@ -78,8 +78,15 @@ class MainGameState(NormalGameState):
                 break
 
     def main_logic(self, delta : float):
-        super().main_logic(delta)
+        Sprite.update_all_sprites(delta)
+        Sprite.update_all_registered_classes(delta)
         self.control_script.process_frame(delta)
+        if self.player.check_collision():
+            self.transition_to_gameover()
+
+    def transition_to_gameover(self):
+        self.game.state = GameOverGameState(self.game)
+
 
 class MainControlScipt(CoroutineScript):
     def initialize(self, time_source : TimeSource):
@@ -102,9 +109,45 @@ class MainControlScipt(CoroutineScript):
         if delta is None: delta = core_object.dt
         while True:
             if cooldown.isover():
-                cooldown.restart()
+                cooldown.set_duration(-1)
                 BasicEnemy.spawn("midtop", pygame.Vector2(centerx, 20))
             delta = yield
+
+
+class GameOverGameState(GameState):
+    def __init__(self, game_object : "Game"):
+        self.game : Game = game_object
+        self.control_script : GameOverControlScript = GameOverControlScript()
+        self.control_script.initialize(self.game.game_timer.get_time)
+        self.game.alert_player("Game over!")
+    
+    def main_logic(self, delta : float):
+        self.control_script.process_frame(delta)
+        if self.control_script.is_over:
+            pygame.event.post(pygame.Event(core_object.END_GAME, {}))
+
+    def cleanup(self):
+        pass
+
+class GameOverControlScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource):
+        return super().initialize(time_source)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None|str:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def corou(time_source : TimeSource) -> Generator[None, float, str]:
+        timer : Timer = Timer(1, time_source)
+        delta : float = yield
+        if delta is None: delta = core_object.dt
+        while not timer.isover():
+            delta = yield
+        return "Done"
+
 
 class PausedGameState(GameState):
     def __init__(self, game_object : 'Game', previous : GameState):
@@ -147,6 +190,7 @@ def runtime_imports():
     global BaseEnemy, BasicEnemy
     import src.sprites.enemy
     from src.sprites.enemy import BaseEnemy, BasicEnemy
+    src.sprites.enemy.runtime_imports()
 
 class NetworkTestGameState(NormalGameState):
     def __init__(self, game_object : 'Game'):

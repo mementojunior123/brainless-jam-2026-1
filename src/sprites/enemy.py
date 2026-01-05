@@ -5,6 +5,8 @@ from framework.utils.helpers import load_alpha_to_colorkey
 from framework.utils.my_timer import Timer, TimeSource
 from framework.core.core import core_object
 from framework.game.coroutine_scripts import CoroutineScript
+import src.sprites.projectiles
+from src.sprites.projectiles import NormalProjectile, BaseProjectile, HomingProjectile, Teams
 
 class BaseEnemy(Sprite):
     active_elements : list['BaseEnemy'] = []
@@ -24,7 +26,7 @@ class BaseEnemy(Sprite):
 
     @classmethod
     def spawn(cls, position_anchor : str, position : int|pygame.Vector2):
-        raise NotImplementedError("Cannot use BaseEnemy.spawn()")
+        raise NotImplementedError("Cannot instanciate base-class BaseEnemy; sub-class must implement this method")
         element = cls.inactive_elements[0]
 
         element.image = element.default_image
@@ -41,6 +43,18 @@ class BaseEnemy(Sprite):
     
     def update(self, delta: float):
         pass
+
+    def when_hit(self, proj):
+        self.kill_instance_safe()
+
+    def check_collisions(self):
+        colliding_projectiles : list[BaseProjectile] = [elem for elem in self.get_all_colliding(BaseProjectile) if elem.team in (Teams.ALLIED, Teams.FFA)]
+        if colliding_projectiles:
+            for elem in colliding_projectiles:
+                self.when_hit(elem)
+                elem.kill_instance()
+                if self._zombie:
+                    break
 
     def clean_instance(self):
         super().clean_instance()
@@ -80,6 +94,10 @@ class BasicEnemy(BaseEnemy):
     
     def update(self, delta: float):
         self.control_script.process_frame(delta)
+        self.check_collisions()
+
+    def when_hit(self, projectile : BaseProjectile):
+        self.kill_instance_safe()
     
     def clean_instance(self):
         super().clean_instance()
@@ -98,10 +116,13 @@ class BasicEnemyControlScript(CoroutineScript):
     
     @staticmethod
     def corou(time_source : TimeSource, unit : BasicEnemy) -> Generator[None, float, str]: #Yield, Send, Return
-        move_timer : Timer = Timer(-1, time_source)
+        
         screen_size = core_object.main_display.get_size()
         screen_sizex, screen_sizey = screen_size
         centerx, centery = screen_sizex // 2, screen_sizey // 2
+
+        move_timer : Timer = Timer(-1, time_source)
+        shot_timer : Timer = Timer(1, time_source)
         direction : int = 1
         delta = yield
         if delta is None: delta = core_object.dt
@@ -113,8 +134,21 @@ class BasicEnemyControlScript(CoroutineScript):
             if unit.rect.left < 0: 
                 unit.move_rect("left", 0)
                 direction = 1
+            if shot_timer.isover():
+                HomingProjectile.spawn(unit.position + pygame.Vector2(0, 30), pygame.Vector2(0, 5), None, None, 180,
+                                       BaseProjectile.rocket_image, homing_range=300, homing_rate=3,
+                                       homing_targets=Player, team=Teams.ENEMY)
+                shot_timer.set_duration(-1)
             delta = yield
+            
+
+def runtime_imports():
+    global Player, src
+    from src.sprites.player import Player
+    import src.sprites.player
 
 Sprite.register_class(BaseEnemy)
 Sprite.register_class(BasicEnemy)
+Sprite.register_class(HomingProjectile)
 for _ in range(30): BasicEnemy()
+for _ in range(30): HomingProjectile()

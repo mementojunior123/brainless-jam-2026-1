@@ -5,6 +5,10 @@ from framework.utils.helpers import load_alpha_to_colorkey
 from framework.utils.my_timer import Timer, TimeSource
 from framework.core.core import core_object
 from framework.game.coroutine_scripts import CoroutineScript
+import src.sprites.projectiles
+from src.sprites.projectiles import NormalProjectile, BaseProjectile, HomingProjectile, Teams
+import src.sprites.enemy
+from src.sprites.enemy import BaseEnemy, BasicEnemy
 
 class Player(Sprite):
     active_elements : list['Player'] = []
@@ -20,12 +24,15 @@ class Player(Sprite):
     FRICTION : float = 0.3
     MIN_VELOCITY : float = 0.1
     MAX_VELOCITY : float = 9
+    BASE_SHOT_COOLDOWN : float = 0.1
     display_size : tuple[int, int] = core_object.main_display.get_size()
     def __init__(self) -> None:
         super().__init__()
         self.animation_images : dict[int, pygame.Surface]
         self.animation_script : PlayerAnimationScript
         self.velocity : pygame.Vector2
+
+        self.shot_cooldown_timer : Timer
         Player.inactive_elements.append(self)
 
     @classmethod
@@ -46,12 +53,15 @@ class Player(Sprite):
         element.animation_script = PlayerAnimationScript()
         element.animation_script.initialize(core_object.game.game_timer.get_time, element, 0.25)
 
+        element.shot_cooldown_timer = Timer(Player.BASE_SHOT_COOLDOWN, core_object.game.game_timer.get_time)
+
         cls.unpool(element)
         return element
     
     def update(self, delta: float):
         self.animation_script.process_frame()
         self.update_movement(delta)
+        self.check_input()
 
     def update_movement(self, delta : float):
         accel = self.calculate_acceleration()
@@ -81,7 +91,6 @@ class Player(Sprite):
         if self.rect.top < 0:
             self.rect.top = 0
 
-    
     def calculate_acceleration(self) -> pygame.Vector2:
         pressed_keys = pygame.key.get_pressed()
         accel_total : pygame.Vector2 = pygame.Vector2(0, 0)
@@ -90,6 +99,24 @@ class Player(Sprite):
         if pressed_keys[pygame.K_d] or pressed_keys[pygame.K_RIGHT]:
             accel_total += pygame.Vector2(Player.ACCEL_SPEED, 0)
         return accel_total
+
+    def check_input(self):
+        if pygame.key.get_pressed()[pygame.K_SPACE]:
+            self.shoot(ignore_cooldown=False)
+    
+    def shoot(self, ignore_cooldown : bool = False) -> BaseProjectile|None:
+        if not (self.shot_cooldown_timer.isover() or ignore_cooldown):
+            return None
+        self.shot_cooldown_timer.restart()
+        return HomingProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -5), None, None, 0,
+                                       BaseProjectile.rocket_image, homing_range=300, homing_rate=3,
+                                       homing_targets=BaseEnemy, team=Teams.ALLIED)
+    
+    def check_collision(self):
+        colliding_projectiles : list[BaseProjectile] = [elem for elem in self.get_all_colliding(BaseProjectile) if elem.team in (Teams.ENEMY, Teams.FFA)]
+        colliding_enemies : list[BaseEnemy] = self.get_all_colliding(BaseEnemy)
+        if colliding_projectiles or colliding_enemies:
+            return True
 
     def clean_instance(self):
         super().clean_instance()
