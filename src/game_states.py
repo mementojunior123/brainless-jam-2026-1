@@ -60,6 +60,58 @@ class NormalGameState(GameState):
             if event.key == pygame.K_p:
                 self.pause()
 
+class MainGameState(NormalGameState):
+    def __init__(self, game_object):
+        self.game : Game = game_object
+        bg = Background.spawn(0)
+        while True:
+            if bg.rect.bottom < core_object.main_display.get_size()[1]:
+                bg = Background.spawn(bg.rect.bottom)
+            else:
+                break
+        self.player : Player = Player.spawn("midbottom", pygame.Vector2(480, 520))
+    
+    def main_logic(self, delta : float):
+        super().main_logic(delta)
+
+class PausedGameState(GameState):
+    def __init__(self, game_object : 'Game', previous : GameState):
+        super().__init__(game_object)
+        self.previous_state = previous
+    
+    def unpause(self):
+        if not self.game.active: return
+        self.game.game_timer.unpause()
+        pause_ui1 = core_object.main_ui.get_sprite('pause_overlay')
+        pause_ui2 = core_object.main_ui.get_sprite('pause_text')
+        if pause_ui1: core_object.main_ui.remove(pause_ui1)
+        if pause_ui2: core_object.main_ui.remove(pause_ui2)
+        self.game.state = self.previous_state
+
+    def handle_key_event(self, event : pygame.Event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_p:
+                self.unpause()
+
+def runtime_imports():
+    global Game
+    from framework.game.game_module import Game
+    global core_object
+    from framework.core.core import core_object
+
+    #runtime imports for game classes
+    global src, TestPlayer      
+    import src.sprites.test_player
+    from src.sprites.test_player import TestPlayer
+
+    global Background
+    import src.sprites.background
+    from src.sprites.background import Background
+
+    global Player
+    import src.sprites.player
+    from src.sprites.player import Player
+
 class NetworkTestGameState(NormalGameState):
     def __init__(self, game_object : 'Game'):
         self.game = game_object
@@ -199,46 +251,16 @@ class TestPattern(CoroutineScript):
         core_object.main_ui.remove(new_textsprite)
         return 'Done'
 
-class PausedGameState(GameState):
-    def __init__(self, game_object : 'Game', previous : GameState):
-        super().__init__(game_object)
-        self.previous_state = previous
-    
-    def unpause(self):
-        if not self.game.active: return
-        self.game.game_timer.unpause()
-        pause_ui1 = core_object.main_ui.get_sprite('pause_overlay')
-        pause_ui2 = core_object.main_ui.get_sprite('pause_text')
-        if pause_ui1: core_object.main_ui.remove(pause_ui1)
-        if pause_ui2: core_object.main_ui.remove(pause_ui2)
-        self.game.state = self.previous_state
-
-    def handle_key_event(self, event : pygame.Event):
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_p:
-                self.unpause()
-
-def runtime_imports():
-    global Game
-    from framework.game.game_module import Game
-    global core_object
-    from framework.core.core import core_object
-
-    #runtime imports for game classes
-    global src, TestPlayer      
-    import src.sprites.test_player
-    from src.sprites.test_player import TestPlayer
-
-
 class GameStates:
     NormalGameState = NormalGameState
     TestGameState = TestGameState
     NetworkTestGameState = NetworkTestGameState
     PausedGameState = PausedGameState
+    MainGameState = MainGameState
 
 
 def initialise_game(game_object : 'Game', event : pygame.Event):
-    if event.mode == 'test' and (not pygame.key.get_pressed()[pygame.K_g]):
+    if event.mode == 'test' and (not True):
         game_object.state = game_object.STATES.NetworkTestGameState(game_object)
     else:
-        game_object.state = game_object.STATES.TestGameState(game_object)
+        game_object.state = MainGameState(game_object)

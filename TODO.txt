@@ -1,0 +1,13 @@
+Game idea : Space invaders modernized
+
+--Necessary--
+
+--High--
+
+--Medium--
+-Improve the player sprites/animation
+-Improve background sprite
+
+--Low--
+-Settings
+-Mobile support
