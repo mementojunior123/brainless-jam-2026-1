@@ -7,6 +7,7 @@ Game idea : Space invaders modernized
 --Medium--
 -Improve the player sprites/animation
 -Improve background sprite
+-Improve enemy sprite
 
 --Low--
 -Settings

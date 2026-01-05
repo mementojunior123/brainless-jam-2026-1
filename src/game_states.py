@@ -61,18 +61,50 @@ class NormalGameState(GameState):
                 self.pause()
 
 class MainGameState(NormalGameState):
-    def __init__(self, game_object):
+    def __init__(self, game_object : "Game"):
         self.game : Game = game_object
+        self.spawn_background()
+        self.player : Player = Player.spawn("midbottom", pygame.Vector2(480, 520))
+        self.control_script : MainControlScipt = MainControlScipt()
+        self.control_script.initialize(self.game.game_timer.get_time)
+        self.screen_size : tuple[int, int] = core_object.main_display.get_size()
+
+    def spawn_background(self):
         bg = Background.spawn(0)
         while True:
             if bg.rect.bottom < core_object.main_display.get_size()[1]:
                 bg = Background.spawn(bg.rect.bottom)
             else:
                 break
-        self.player : Player = Player.spawn("midbottom", pygame.Vector2(480, 520))
-    
+
     def main_logic(self, delta : float):
         super().main_logic(delta)
+        self.control_script.process_frame(delta)
+
+class MainControlScipt(CoroutineScript):
+    def initialize(self, time_source : TimeSource):
+        return super().initialize(time_source)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None|str:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def corou(time_source : TimeSource) -> Generator[None, float, str]:
+        timer : Timer = Timer(-1, time_source)
+        cooldown : Timer = Timer(0.25, time_source)
+        delta : float = yield
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+        if delta is None: delta = core_object.dt
+        while True:
+            if cooldown.isover():
+                cooldown.restart()
+                BasicEnemy.spawn("midtop", pygame.Vector2(centerx, 20))
+            delta = yield
 
 class PausedGameState(GameState):
     def __init__(self, game_object : 'Game', previous : GameState):
@@ -111,6 +143,10 @@ def runtime_imports():
     global Player
     import src.sprites.player
     from src.sprites.player import Player
+
+    global BaseEnemy, BasicEnemy
+    import src.sprites.enemy
+    from src.sprites.enemy import BaseEnemy, BasicEnemy
 
 class NetworkTestGameState(NormalGameState):
     def __init__(self, game_object : 'Game'):
