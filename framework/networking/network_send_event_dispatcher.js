@@ -1,0 +1,1 @@
+window.dispatchEvent(new CustomEvent("NetworkSendData", {"detail" : "`{DATA}`"}));
