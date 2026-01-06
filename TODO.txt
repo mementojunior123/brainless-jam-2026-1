@@ -1,10 +1,14 @@
 Game idea : Space invaders modernized
+After every wave, you pick one out of 3 upgrades like +20% firerate or +0.2 damage
+After every 5 waves, you get major upgrades
+You also get major upgrades right before the final boss
+
 
 --Necessary--
 -Add a secondary fire mechanic
--Implement the upgrade phase
+-Implement the upgrade phase (small upgrades on normal waves like firerate/damage and big upgrades on boss waves)
 -Implement boss waves
--Implement gunner enemy
+-Implement gunner enemy (stays on the backrow, dodges bullets sometimes, fires and moves more intelligently)
 -Add feedback for hits
 
 --High--
