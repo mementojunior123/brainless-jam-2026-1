@@ -8,10 +8,6 @@ You also get major upgrades right before the final boss
 -Add a secondary fire mechanic
 -Implement the upgrade phase (small upgrades on normal waves like firerate/damage and big upgrades on boss waves)
 -Implement boss waves
--Add feedback for hits
--Add a few sound effects
--Implement destroyable projectiles
-
 
 --High-- (Things I need to do before the end of the jam)
 -Implement proper enemy entries
@@ -20,12 +16,18 @@ You also get major upgrades right before the final boss
 -Balance the game more
 -Add basic informations to the menu (high-score, controls)
 -Add some music
+-Add a few sound effects
+-Implement destroyable projectiles
+-Add feedback for hits
+-Add feedback for when secondary fire is ready
+
 
 --Medium-- (Things I will add if I have time to spare)
 -Improve the player sprites/animation
 -Improve background sprite
 -Improve enemy sprite
 -Improve the menu
+-Add defensive upgrades
 
 --Low-- (Things I won't add in the game jam due to time constraints)
 -Settings

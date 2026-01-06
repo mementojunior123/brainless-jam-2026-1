@@ -108,7 +108,7 @@ class BasicEnemy(BaseEnemy):
             self.kill_instance_safe()
     
     def take_damage(self, damage : float):
-        print(f"Basic enemy took damage : {damage}")
+        core_object.log(f"Basic enemy took damage : {damage}")
         self.health -= damage
     
     
@@ -145,7 +145,7 @@ class BasicEnemyControlScript(CoroutineScript):
 
         move_timer : Timer = Timer(-1, time_source)
         shot_timer : Timer = Timer(1, time_source)
-        direction : int = 1
+        direction : int = 1 if random.randint(0, 1) else -1
         delta = yield
         if delta is None: delta = core_object.dt
         while True:
@@ -211,16 +211,16 @@ class EliteEnemy(BaseEnemy):
             self.kill_instance_safe()
     
     def take_damage(self, damage : float):
-        print(f"Elite enemy took damage : {damage}")
+        core_object.log(f"Elite enemy took damage : {damage}")
         self.health -= damage
     
     def fire_homing_projectile(self) -> HomingProjectile:
-        return HomingProjectile.spawn(self.position + pygame.Vector2(0, 30), pygame.Vector2(0, 7), None, None, 0,
+        return HomingProjectile.spawn(self.position + pygame.Vector2(0, 30), pygame.Vector2(0, 8), None, None, 0,
         BaseProjectile.rocket_image, homing_range=300, homing_rate=1,
         homing_targets=Player, team=Teams.ENEMY)
     
     def fire_normal_projectile(self) -> NormalProjectile:
-        return NormalProjectile.spawn(self.position + pygame.Vector2(0, 30), pygame.Vector2(0, 7), None, None, 0,
+        return NormalProjectile.spawn(self.position + pygame.Vector2(0, 30), pygame.Vector2(0, 8), None, None, 0,
         recolor_image(BaseProjectile.normal_image3, "Red"),  team=Teams.ENEMY)
     
     def clean_instance(self):
@@ -247,7 +247,7 @@ class EliteEnemyControlScript(CoroutineScript):
 
         move_timer : Timer = Timer(-1, time_source)
         shot_timer : Timer = Timer(1, time_source)
-        direction : int = 1
+        direction : int = 1 if random.randint(0, 1) else -1
         delta = yield
         if delta is None: delta = core_object.dt
         while True:
@@ -312,7 +312,7 @@ class GunnerEnemy(BaseEnemy):
             self.kill_instance_safe()
     
     def take_damage(self, damage : float):
-        print(f"Gunner enemy took damage : {damage}")
+        core_object.log(f"Gunner enemy took damage : {damage}")
         self.health -= damage
     
     def fire_homing_projectile(self) -> HomingProjectile:
@@ -398,7 +398,7 @@ class GunnerEnemyMoveScript(CoroutineScript):
         bounding_box : pygame.Rect = pygame.Rect(0, 0, screen_sizex, screen_sizey)
 
         move_timer : Timer = Timer(-1, time_source)
-        direction : int = 1
+        direction : int = 1 if random.randint(0, 1) else -1
         dodge_cooldown : Timer = Timer(0.5, time_source)
     
         delta = yield
@@ -420,7 +420,7 @@ class GunnerEnemyMoveScript(CoroutineScript):
                         if GunnerEnemyMoveScript.predict_projectile_contact(
                         unit, proj, pygame.Vector2(direction * unit.speed, 0), bounding_box):
                             dodge_cooldown.restart()
-                            if random.randint(1, 10) <= 5:
+                            if random.randint(1, 10) <= 3:
                                 direction *= -1
             delta = yield
 

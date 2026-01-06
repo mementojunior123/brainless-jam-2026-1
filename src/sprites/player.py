@@ -1,5 +1,5 @@
 import pygame
-from typing import Generator
+from typing import Generator, TypeAlias, Literal, TypedDict
 from framework.game.sprite import Sprite
 from framework.utils.helpers import load_alpha_to_colorkey, recolor_image
 from framework.utils.my_timer import Timer, TimeSource
@@ -9,6 +9,31 @@ import src.sprites.projectiles
 from src.sprites.projectiles import NormalProjectile, BaseProjectile, HomingProjectile, Teams
 import src.sprites.enemy
 from src.sprites.enemy import BaseEnemy, BasicEnemy
+from enum import Enum
+
+
+class AlternateFireTypes(Enum):
+    LAZER = 0
+    SHOTGUN = 1
+
+UpgradeType : TypeAlias = Literal['RegularDamageBonus', 'SpecialDamageMultipler', 'AllDamageMultiplier',
+                                  'RegularFirerateMultiplier', 'SpecialFirerateMultiplier', 'AllFirerateMultiplier'
+                                  'AlternateFireType', 'AlternateFireBaseDamage', 'AlternateFireBaseFireRate'
+                                  'HealthBonus']
+
+class Upgrades(TypedDict):
+    RegularDamageBonus : float
+    SpecialDamageMultipler : float
+    AllDamageMultiplier : float
+
+    RegularFirerateMultiplier : float
+    SpecialFirerateMultiplier : float
+    AllFirerateMultiplier : float
+
+    AlternateFireType : int
+    AlternateFireBaseDamage : float # Shotgun damage is per-pellet
+    AlternateFireBaseFireRate : float
+    HealthBonus : int
 
 class Player(Sprite):
     active_elements : list['Player'] = []
@@ -25,6 +50,7 @@ class Player(Sprite):
     MIN_VELOCITY : float = 0.1
     MAX_VELOCITY : float = 9
     BASE_SHOT_FIRERATE : float = 4
+    BASE_ALTERNATE_SHOT_FIRERATE : float = 0.25
     display_size : tuple[int, int] = core_object.main_display.get_size()
     def __init__(self) -> None:
         super().__init__()
@@ -38,7 +64,26 @@ class Player(Sprite):
         self.can_shoot : bool
 
         self.shot_cooldown_timer : Timer
+        self.alternate_fire_cooldown_timer : Timer
+        self.upgrades : Upgrades
         Player.inactive_elements.append(self)
+    
+    @staticmethod
+    def get_default_upgrades() -> Upgrades:
+        return {
+            'RegularDamageBonus' : 0,
+            'SpecialDamageMultipler' : 1,
+            'AllDamageMultiplier' : 1,
+
+            'RegularFirerateMultiplier' : 1,
+            'SpecialFirerateMultiplier' : 1,
+            'AllFirerateMultiplier' : 1,
+
+            'AlternateFireType' : AlternateFireTypes.LAZER.value,
+            'AlternateFireBaseDamage' : 5,
+            'AlternateFireBaseFireRate' : 0.25,
+            'HealthBonus' : 0,
+        }
 
     @classmethod
     def spawn(cls, position_anchor : str, position : int|pygame.Vector2):
@@ -59,11 +104,15 @@ class Player(Sprite):
         element.animation_script.initialize(core_object.game.game_timer.get_time, element, 0.25)
 
         element.shot_cooldown_timer = Timer(1 / Player.BASE_SHOT_FIRERATE, core_object.game.game_timer.get_time)
+        element.shot_cooldown_timer.start_time -= 1 / Player.BASE_SHOT_FIRERATE
+        element.alternate_fire_cooldown_timer = Timer(1 / Player.BASE_ALTERNATE_SHOT_FIRERATE, core_object.game.game_timer.get_time)
+        element.alternate_fire_cooldown_timer.start_time -= 1 / Player.BASE_ALTERNATE_SHOT_FIRERATE
         element.visible = True
 
         element.max_hp = 3
         element.current_hp = element.max_hp
         element.can_shoot = True
+        element.upgrades = Player.get_default_upgrades()
 
         cls.unpool(element)
         return element
@@ -118,17 +167,55 @@ class Player(Sprite):
     def check_input(self):
         if pygame.key.get_pressed()[pygame.K_SPACE]:
             self.shoot(ignore_cooldown=False)
+        if pygame.key.get_pressed()[pygame.K_f]:
+            if not isinstance(core_object.game.state, core_object.game.STATES.ShopGameState):
+                self.perform_alternate_fire(ignore_cooldown=False)
     
     def shoot(self, ignore_cooldown : bool = False) -> BaseProjectile|None:
         if not (self.shot_cooldown_timer.isover() or ignore_cooldown) or not self.can_shoot:
             return None
-        self.shot_cooldown_timer.set_duration(1 / Player.BASE_SHOT_FIRERATE)
+        
+        normal_damage : float = (1 + self.upgrades['RegularDamageBonus']) * self.upgrades['AllDamageMultiplier']
+        normal_firerate : float = (Player.BASE_SHOT_FIRERATE * self.upgrades['RegularFirerateMultiplier']) * self.upgrades['AllFirerateMultiplier']
+        self.shot_cooldown_timer.set_duration(1 / normal_firerate)
         return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -10), None, None, 0,
-                                       recolor_image(BaseProjectile.normal_image4, "White"), team=Teams.ALLIED)
+                                       recolor_image(BaseProjectile.normal_image4, "White"), team=Teams.ALLIED,
+                                       damage = normal_damage)
 
+    def perform_alternate_fire(self, ignore_cooldown : bool = False) -> BaseProjectile|None:
+        if not (self.alternate_fire_cooldown_timer.isover() or ignore_cooldown) or not self.can_shoot:
+            return None
+        special_damage : float = (self.upgrades['AlternateFireBaseDamage'] + self.upgrades['SpecialDamageMultipler']) * self.upgrades['AllDamageMultiplier']
+        special_firerate : float = (self.upgrades['AlternateFireBaseFireRate'] * self.upgrades['SpecialFirerateMultiplier']) * self.upgrades['AllFirerateMultiplier']
+        self.alternate_fire_cooldown_timer.set_duration(1 / special_firerate)
+        match self.upgrades['AlternateFireType']:
+            case AlternateFireTypes.LAZER.value:
+                ...
+            case AlternateFireTypes.SHOTGUN.value:
+                ...
+            case _:
+                core_object.log(f"Alternate fire type {self.upgrades['AlternateFireType']} does not exist")
+        return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -13), None, None, 0,
+                                       recolor_image(BaseProjectile.normal_image3, "Purple"), team=Teams.ALLIED,
+                                       damage=5)
+    
+    def fire_lazer(self, damage : int) -> NormalProjectile:
+        return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -13), None, None, 0,
+                                       recolor_image(BaseProjectile.normal_image3, "Purple"), team=Teams.ALLIED,
+                                       damage=damage)
+    
+    def fire_shotgun(self, damage : int) -> list[NormalProjectile]:
+        proj_list : list[NormalProjectile] = []
+        for angle in (-30, -15, 0, 15, 30):
+            proj_list.append(
+                NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -13).rotate(angle),
+                        None, None, angle, recolor_image(BaseProjectile.normal_image3, "White"), team=Teams.ALLIED,
+                        damage=damage)
+            )
+        return proj_list
     
     def take_damage(self, damage : float):
-        print(f"Player took damage : {damage}")
+        core_object.log(f"Player took damage : {damage}")
         self.current_hp -= damage
 
     def check_collision(self):
@@ -152,6 +239,8 @@ class Player(Sprite):
         self.visible = None
 
         self.shot_cooldown_timer = None
+        self.alternate_fire_cooldown_timer = None
+        self.upgrades = None
         self.can_shoot = None
 
 class PlayerAnimationScript(CoroutineScript):

@@ -69,17 +69,17 @@ class WaveData(TypedDict):
 WAVE_DATA : dict[int, WaveData] = {
     1 : {
         'enemies' : {
-            'basic' : 0,
-            'gunner' : 1,
+            'basic' : 5,
         },
-        "spawn_cooldown" : 3.0,
-        "spawn_rate_penalty_per_enemy" : 1.2
+        "spawn_cooldown" : 2.9,
+        "spawn_rate_penalty_per_enemy" : 1.0
     },
 
     2 : {
         'enemies' : {
             'basic' : 8,
             'elite' : 1,
+            'gunner' : 1,
         },
         "spawn_cooldown" : 2.7,
         "spawn_rate_penalty_per_enemy" : 1
@@ -89,6 +89,7 @@ WAVE_DATA : dict[int, WaveData] = {
         'enemies' : {
             'basic' : 8,
             'elite' : 3,
+            'gunner' : 2,
         },
         "spawn_cooldown" : 2.4,
         "spawn_rate_penalty_per_enemy" : 0.5
@@ -98,8 +99,19 @@ WAVE_DATA : dict[int, WaveData] = {
         'enemies' : {
             'basic' : 8,
             'elite' : 5,
+            'gunner' : 3
         },
         "spawn_cooldown" : 2.1,
+        "spawn_rate_penalty_per_enemy" : 0.2
+    },
+
+    5 : {
+        'enemies' : {
+            'basic' : 8,
+            'elite' : 5,
+            'gunner' : 3
+        },
+        "spawn_cooldown" : 2.0,
         "spawn_rate_penalty_per_enemy" : 0.2
     },
 }
@@ -198,7 +210,7 @@ class BasicWaveControlScript(CoroutineScript):
         elif enemy_type == EnemyTypes.GUNNER.value:
             GunnerEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
         else:
-            print("Enemy type not found!")
+            core_object.log(f"Enemy type '{enemy_type}' not found!")
     
     @staticmethod
     def corou(time_source : TimeSource, wave_number : int) -> Generator[None, float, str]:
@@ -220,7 +232,7 @@ class BasicWaveControlScript(CoroutineScript):
                 enemy_spawn_timer.set_duration(spawn_cooldown + spawn_rate_penalty_per_enemy * len(BaseEnemy.active_elements))
                 enemy_type_chosen : EnemyType = BasicWaveControlScript.pick_random_enemy(enemies)
                 enemies[enemy_type_chosen] -= 1
-                BasicWaveControlScript.spawn_enemy(enemy_type_chosen, centerx)
+                BasicWaveControlScript.spawn_enemy(enemy_type_chosen, random.randint(100, screen_sizex - 100))
             delta = yield
         while BaseEnemy.active_elements:
             delta = yield
@@ -234,7 +246,6 @@ class ShopGameState(NormalGameState):
         self.control_script : ShopControlScript = ShopControlScript()
         self.control_script.initialize(self.game.game_timer.get_time)
         self.game.alert_player("Shop entered!")
-        print("hello")
     
     def main_logic(self, delta : float):
         Sprite.update_all_sprites(delta)
@@ -244,7 +255,6 @@ class ShopGameState(NormalGameState):
             self.transition_to_main()
     
     def transition_to_main(self):
-        print("bye")
         self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1)
 
 class ShopControlScript(CoroutineScript):
@@ -493,6 +503,7 @@ class GameStates:
     NetworkTestGameState = NetworkTestGameState
     PausedGameState = PausedGameState
     MainGameState = MainGameState
+    ShopGameState = ShopGameState
 
 
 def initialise_game(game_object : 'Game', event : pygame.Event):
