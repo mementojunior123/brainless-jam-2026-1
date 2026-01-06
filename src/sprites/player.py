@@ -24,7 +24,7 @@ class Player(Sprite):
     FRICTION : float = 0.3
     MIN_VELOCITY : float = 0.1
     MAX_VELOCITY : float = 9
-    BASE_SHOT_COOLDOWN : float = 0.1
+    BASE_SHOT_FIRERATE : float = 5
     display_size : tuple[int, int] = core_object.main_display.get_size()
     def __init__(self) -> None:
         super().__init__()
@@ -32,9 +32,10 @@ class Player(Sprite):
         self.animation_script : PlayerAnimationScript
         self.velocity : pygame.Vector2
 
-        self.max_hp : int
-        self.current_hp : int
+        self.max_hp : float
+        self.current_hp : float
         self.visible : bool
+        self.can_shoot : bool
 
         self.shot_cooldown_timer : Timer
         Player.inactive_elements.append(self)
@@ -57,11 +58,12 @@ class Player(Sprite):
         element.animation_script = PlayerAnimationScript()
         element.animation_script.initialize(core_object.game.game_timer.get_time, element, 0.25)
 
-        element.shot_cooldown_timer = Timer(Player.BASE_SHOT_COOLDOWN, core_object.game.game_timer.get_time)
+        element.shot_cooldown_timer = Timer(1 / Player.BASE_SHOT_FIRERATE, core_object.game.game_timer.get_time)
         element.visible = True
 
         element.max_hp = 3
         element.current_hp = element.max_hp
+        element.can_shoot = True
 
         cls.unpool(element)
         return element
@@ -118,14 +120,14 @@ class Player(Sprite):
             self.shoot(ignore_cooldown=False)
     
     def shoot(self, ignore_cooldown : bool = False) -> BaseProjectile|None:
-        if not (self.shot_cooldown_timer.isover() or ignore_cooldown):
+        if not (self.shot_cooldown_timer.isover() or ignore_cooldown) or not self.can_shoot:
             return None
-        self.shot_cooldown_timer.restart()
+        self.shot_cooldown_timer.set_duration(1 / Player.BASE_SHOT_FIRERATE)
         return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -10), None, None, 0,
                                        recolor_image(BaseProjectile.normal_image4, "White"), team=Teams.ALLIED)
 
     
-    def take_damage(self, damage : int):
+    def take_damage(self, damage : float):
         print(f"Player took damage : {damage}")
         self.current_hp -= damage
 
@@ -150,6 +152,7 @@ class Player(Sprite):
         self.visible = None
 
         self.shot_cooldown_timer = None
+        self.can_shoot = None
 
 class PlayerAnimationScript(CoroutineScript):
     def initialize(self, time_source : TimeSource, player : Player, cycle_time : float):

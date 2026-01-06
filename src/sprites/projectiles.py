@@ -37,7 +37,7 @@ class BaseProjectile(Sprite):
         self.type : str
         self.was_onscreen_once : bool
         self.team : Teams
-        self.damage : int
+        self.damage : float
         BaseProjectile.inactive_elements.append(self)
 
     @classmethod
@@ -97,7 +97,7 @@ class NormalProjectile(BaseProjectile):
     def spawn(cls, new_pos : pygame.Vector2, velocity : pygame.Vector2|None, accel : pygame.Vector2|None, drag : float|None, angle : float,
               custom_image : pygame.Surface, team : Teams = Teams.PACIFIST, 
               projectile_type : str = "", pivot_offset : pygame.Vector2|None = None,
-              zindex : int = 0, damage : int = 1):
+              zindex : int = 0, damage : float = 1):
         element = cls.inactive_elements[0]
 
         element.image = custom_image
@@ -162,7 +162,7 @@ class HomingProjectile(BaseProjectile):
               angle_offset : float, custom_image : pygame.Surface, team : Teams = Teams.PACIFIST, 
               projectile_type : str = "", pivot_offset : pygame.Vector2|None = None,
               zindex : int = 0, homing_range : float = 1000, homing_rate : float = 3, 
-              homing_targets : list[list[Sprite]|Sprite]|None = None, damage : int = 1):
+              homing_targets : list[list[Sprite]|Sprite]|None = None, damage : float = 1):
         if homing_targets is None: homing_targets = []
         if not isinstance(homing_targets, list):
             homing_targets = [homing_targets]

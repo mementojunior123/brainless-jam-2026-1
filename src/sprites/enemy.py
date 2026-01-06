@@ -23,7 +23,7 @@ class BaseEnemy(Sprite):
     def __init__(self) -> None:
         super().__init__()
         self.type : EnemyType
-        self.health : int
+        self.health : float
         BaseEnemy.inactive_elements.append(self)
 
     @classmethod
@@ -107,7 +107,7 @@ class BasicEnemy(BaseEnemy):
         if self.health <= 0:
             self.kill_instance_safe()
     
-    def take_damage(self, damage : int):
+    def take_damage(self, damage : float):
         print(f"Elite took damage : {damage}")
         self.health -= damage
     
@@ -210,7 +210,7 @@ class EliteEnemy(BaseEnemy):
         if self.health <= 0:
             self.kill_instance_safe()
     
-    def take_damage(self, damage : int):
+    def take_damage(self, damage : float):
         print(f"Elite took damage : {damage}")
         self.health -= damage
     
