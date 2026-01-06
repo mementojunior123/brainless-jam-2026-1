@@ -24,7 +24,7 @@ class Player(Sprite):
     FRICTION : float = 0.3
     MIN_VELOCITY : float = 0.1
     MAX_VELOCITY : float = 9
-    BASE_SHOT_FIRERATE : float = 5
+    BASE_SHOT_FIRERATE : float = 4
     display_size : tuple[int, int] = core_object.main_display.get_size()
     def __init__(self) -> None:
         super().__init__()

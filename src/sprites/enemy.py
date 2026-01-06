@@ -67,7 +67,7 @@ class BasicEnemy(BaseEnemy):
     active_elements : list['BasicEnemy'] = []
     inactive_elements : list['BasicEnemy'] = []
     linked_classes : list['Sprite'] = [Sprite, BaseEnemy]
-    BASE_SPEED : float = 5.0
+    BASE_SPEED : float = 4.0
     APPROCH_RATE : int = 100
     def __init__(self):
         super().__init__()
@@ -108,7 +108,7 @@ class BasicEnemy(BaseEnemy):
             self.kill_instance_safe()
     
     def take_damage(self, damage : float):
-        print(f"Elite took damage : {damage}")
+        print(f"Basic enemy took damage : {damage}")
         self.health -= damage
     
     
@@ -160,14 +160,14 @@ class BasicEnemyControlScript(CoroutineScript):
                 unit.position += pygame.Vector2(0, BasicEnemy.APPROCH_RATE)
             if shot_timer.isover():
                 unit.fire_normal_projectile()
-                shot_timer.set_duration(random.uniform(1.2, 2))
+                shot_timer.set_duration(random.uniform(1.7, 3))
             delta = yield
 
 class EliteEnemy(BaseEnemy):
     active_elements : list['EliteEnemy'] = []
     inactive_elements : list['EliteEnemy'] = []
     linked_classes : list['Sprite'] = [Sprite, BaseEnemy]
-    BASE_SPEED : float = 7.0
+    BASE_SPEED : float = 6.0
     APPROCH_RATE : int = 100
 
     elite_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/enemy/elite_enemy.png", (0, 255, 0))
@@ -211,7 +211,7 @@ class EliteEnemy(BaseEnemy):
             self.kill_instance_safe()
     
     def take_damage(self, damage : float):
-        print(f"Elite took damage : {damage}")
+        print(f"Elite enemy took damage : {damage}")
         self.health -= damage
     
     def fire_homing_projectile(self) -> HomingProjectile:

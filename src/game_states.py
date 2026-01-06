@@ -70,20 +70,37 @@ WAVE_DATA : dict[int, WaveData] = {
     1 : {
         'enemies' : {
             'basic' : 5,
-            'elite' : 1
         },
-        "spawn_cooldown" : 1.5,
-        "spawn_rate_penalty_per_enemy" : 0.0
+        "spawn_cooldown" : 3.0,
+        "spawn_rate_penalty_per_enemy" : 1.2
     },
 
     2 : {
         'enemies' : {
             'basic' : 8,
+            'elite' : 1,
+        },
+        "spawn_cooldown" : 2.7,
+        "spawn_rate_penalty_per_enemy" : 1
+    },
+
+    3 : {
+        'enemies' : {
+            'basic' : 8,
             'elite' : 3,
         },
-        "spawn_cooldown" : 1.0,
-        "spawn_rate_penalty_per_enemy" : 0.0
-    }
+        "spawn_cooldown" : 2.4,
+        "spawn_rate_penalty_per_enemy" : 0.5
+    },
+
+    4 : {
+        'enemies' : {
+            'basic' : 8,
+            'elite' : 5,
+        },
+        "spawn_cooldown" : 2.1,
+        "spawn_rate_penalty_per_enemy" : 0.2
+    },
 }
 
 class MainGameState(NormalGameState):
@@ -99,10 +116,11 @@ class MainGameState(NormalGameState):
             self.player = prev_main_state.player
             self.screen_size = prev_main_state.screen_size
         
-        self.control_script : MainControlScipt = MainControlScipt()
-        self.control_script.initialize(self.game.game_timer.get_time)
+        self.control_script : BasicWaveControlScript = BasicWaveControlScript()
+        self.control_script.initialize(self.game.game_timer.get_time, wave_num)
 
         self.wave_number : int = wave_num
+        self.game.alert_player(f"Wave {self.wave_number} start")
 
     def spawn_background(self):
         bg = Background.spawn(0)
@@ -188,7 +206,7 @@ class BasicWaveControlScript(CoroutineScript):
         spawn_cooldown : float = wave_data["spawn_cooldown"]
         spawn_rate_penalty_per_enemy : float = wave_data["spawn_rate_penalty_per_enemy"]
 
-        enemy_spawn_timer : Timer = Timer(spawn_cooldown, time_source)
+        enemy_spawn_timer : Timer = Timer(1.5, time_source)
         wave_timer : Timer = Timer(-1, time_source)
         delta : float = yield
         if delta is None: delta = core_object.dt
@@ -221,7 +239,6 @@ class ShopGameState(NormalGameState):
             self.transition_to_main()
     
     def transition_to_main(self):
-        self.game.alert_player("Shop exited!")
         print("bye")
         self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1)
 

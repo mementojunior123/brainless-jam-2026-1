@@ -10,6 +10,7 @@ You also get major upgrades right before the final boss
 -Implement boss waves
 -Implement gunner enemy (stays on the backrow, dodges bullets sometimes, fires and moves more intelligently)
 -Add feedback for hits
+-Implement proper enemy entries
 
 --High--
 -Add an animation for basic enemies
