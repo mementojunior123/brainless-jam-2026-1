@@ -71,8 +71,9 @@ class Player(Sprite):
     FRICTION : float = 0.3
     MIN_VELOCITY : float = 0.1
     MAX_VELOCITY : float = 9
-    BASE_SHOT_FIRERATE : float = 4
+    BASE_SHOT_FIRERATE : float = 3
     BASE_ALTERNATE_SHOT_FIRERATE : float = 0.25
+    BASE_HEALTH : int = 3
     display_size : tuple[int, int] = core_object.main_display.get_size()
     def __init__(self) -> None:
         super().__init__()
@@ -134,7 +135,7 @@ class Player(Sprite):
         element.alternate_fire_cooldown_timer.start_time -= 1 / Player.BASE_ALTERNATE_SHOT_FIRERATE
         element.visible = True
 
-        element.max_hp = 3
+        element.max_hp = Player.BASE_HEALTH
         element.current_hp = element.max_hp
         element.can_shoot = True
         element.upgrades = Player.get_default_upgrades()
@@ -213,19 +214,17 @@ class Player(Sprite):
     def perform_alternate_fire(self, ignore_cooldown : bool = False) -> BaseProjectile|None:
         if not (self.alternate_fire_cooldown_timer.isover() or ignore_cooldown) or not self.can_shoot:
             return None
-        special_damage : float = (self.upgrades['AlternateFireBaseDamage'] + self.upgrades['SpecialDamageMultipler']) * self.upgrades['AllDamageMultiplier']
+        special_damage : float = (self.upgrades['AlternateFireBaseDamage'] * self.upgrades['SpecialDamageMultipler']) * self.upgrades['AllDamageMultiplier']
         special_firerate : float = (self.upgrades['AlternateFireBaseFireRate'] * self.upgrades['SpecialFirerateMultiplier']) * self.upgrades['AllFirerateMultiplier']
         self.alternate_fire_cooldown_timer.set_duration(1 / special_firerate)
         match self.upgrades['AlternateFireType']:
             case AlternateFireTypes.LAZER.value:
-                ...
+                return self.fire_lazer(special_damage)
             case AlternateFireTypes.SHOTGUN.value:
-                ...
+                return (self.fire_shotgun(special_damage))[2]
             case _:
                 core_object.log(f"Alternate fire type {self.upgrades['AlternateFireType']} does not exist")
-        return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -13), None, None, 0,
-                                       recolor_image(BaseProjectile.normal_image3, "Purple"), team=Teams.ALLIED,
-                                       damage=5)
+                return None
     
     def fire_lazer(self, damage : int) -> NormalProjectile:
         return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -13), None, None, 0,

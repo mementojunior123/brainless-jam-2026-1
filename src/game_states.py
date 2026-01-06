@@ -252,9 +252,9 @@ class ShopGameState(NormalGameState):
         candidates : dict[UpgradeType, float|int]
         if self.finished_wave % 5 != 0:
             candidates = {
-                'RegularDamageBonus' : 1,
-                'SpecialDamageMultipler' : 0.2,
-                'AllDamageMultiplier' : 0.1,
+                'RegularDamageBonus' : 0.5,
+                'SpecialDamageMultipler' : 0.4,
+                'AllDamageMultiplier' : 0.2,
 
                 'RegularFirerateMultiplier' : 0.2,
                 'SpecialFirerateMultiplier' : 0.2,
@@ -282,6 +282,40 @@ class ShopGameState(NormalGameState):
             core_object.log("Did not apply an upgrade")
             return
         upgrade_value : float|int = self.candidates[upgrade_type]
+        player : Player = self.prev.player
+        match upgrade_type:
+            case 'AllDamageMultiplier':
+                player.upgrades[upgrade_type] += upgrade_value
+            case 'AllFirerateMultiplier':
+                player.upgrades[upgrade_type] += upgrade_value
+            case 'AlternateFireType':
+                player.upgrades['AlternateFireType'] = upgrade_value
+                player.upgrades['AlternateFireBaseDamage'] = src.sprites.player.alternate_fire_base_stats[upgrade_value]['damage']
+                player.upgrades['AlternateFireBaseFireRate'] = src.sprites.player.alternate_fire_base_stats[upgrade_value]['firerate']
+            case 'HealHealth':
+                player.current_hp += upgrade_value
+                if player.current_hp > player.max_hp:
+                    player.current_hp = player.max_hp
+            case 'HealMax':
+                player.current_hp = player.max_hp
+            case 'MaxHealthBonus':
+                player.upgrades['MaxHealthBonus'] += upgrade_value
+                prev_max_hp : int = player.max_hp
+                player.max_hp = Player.BASE_HEALTH + player.upgrades['MaxHealthBonus']
+                player.current_hp += (player.max_hp - prev_max_hp)
+            case 'RegularDamageBonus':
+                player.upgrades[upgrade_type] += upgrade_value
+            case 'RegularFirerateMultiplier':
+                player.upgrades[upgrade_type] += upgrade_value
+            case 'SpecialDamageMultipler':
+                player.upgrades[upgrade_type] += upgrade_value
+            case 'SpecialFirerateMultiplier':
+                player.upgrades[upgrade_type] += upgrade_value
+            case _:
+                player.upgrades[upgrade_type] += upgrade_value
+                core_object.log(f"Could not apply upgrade - {upgrade_type}: {upgrade_value}")
+                return
+
         core_object.log(f"Applied upgrade - {upgrade_type}: {upgrade_value}")
             
     
