@@ -1,8 +1,16 @@
 Game idea : Space invaders modernized
 
 --Necessary--
+-Add a secondary fire mechanic
+-Implement the upgrade phase
+-Implement boss waves
+-Implement gunner enemy
+-Add feedback for hits
 
 --High--
+-Add an animation for basic enemies
+-Add a mechanic that allows the player to dodge
+
 
 --Medium--
 -Improve the player sprites/animation

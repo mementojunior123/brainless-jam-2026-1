@@ -2,7 +2,7 @@ import pygame
 from framework.game.sprite import Sprite
 from framework.core.core import core_object
 from framework.utils.pivot_2d import Pivot2D
-from framework.utils.helpers import sign, load_alpha_to_colorkey
+from framework.utils.helpers import sign, load_alpha_to_colorkey, ColorType
 from enum import Enum
 from inspect import isclass
 
@@ -22,6 +22,12 @@ class BaseProjectile(Sprite):
 
     rocket_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/rocket.png", (0, 255, 0))
 
+    normal_image1 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_1-white.png", (0, 255, 0))
+    normal_image2 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_2-white.png", (0, 255, 0))
+    normal_image3 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_3-white.png", (0, 255, 0))
+    normal_image4 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_4-white.png", (0, 255, 0))
+
+
     def __init__(self) -> None:
         super().__init__()
         self.velocity : pygame.Vector2
@@ -31,6 +37,7 @@ class BaseProjectile(Sprite):
         self.type : str
         self.was_onscreen_once : bool
         self.team : Teams
+        self.damage : int
         BaseProjectile.inactive_elements.append(self)
 
     @classmethod
@@ -75,11 +82,9 @@ class BaseProjectile(Sprite):
         self.type = None
         self.was_onscreen_once = None
         self.team = None
+        self.damage = None
 
 class NormalProjectile(BaseProjectile):
-    default_image_size : tuple[int, int] = (20, 10)
-    default_image = pygame.Surface(default_image_size)
-    default_image.fill((0, 255, 0))
     active_elements : list['NormalProjectile'] = []
     inactive_elements : list['NormalProjectile'] = []
     linked_classes : list['Sprite'] = [Sprite, BaseProjectile]
@@ -92,7 +97,7 @@ class NormalProjectile(BaseProjectile):
     def spawn(cls, new_pos : pygame.Vector2, velocity : pygame.Vector2|None, accel : pygame.Vector2|None, drag : float|None, angle : float,
               custom_image : pygame.Surface, team : Teams = Teams.PACIFIST, 
               projectile_type : str = "", pivot_offset : pygame.Vector2|None = None,
-              zindex : int = 0):
+              zindex : int = 0, damage : int = 1):
         element = cls.inactive_elements[0]
 
         element.image = custom_image
@@ -112,6 +117,7 @@ class NormalProjectile(BaseProjectile):
         element.type = projectile_type
         element.mask = pygame.mask.from_surface(element.image)
         element.was_onscreen_once = False
+        element.damage = damage
 
         cls.unpool(element)
         return element
@@ -156,7 +162,7 @@ class HomingProjectile(BaseProjectile):
               angle_offset : float, custom_image : pygame.Surface, team : Teams = Teams.PACIFIST, 
               projectile_type : str = "", pivot_offset : pygame.Vector2|None = None,
               zindex : int = 0, homing_range : float = 1000, homing_rate : float = 3, 
-              homing_targets : list[list[Sprite]|Sprite]|None = None):
+              homing_targets : list[list[Sprite]|Sprite]|None = None, damage : int = 1):
         if homing_targets is None: homing_targets = []
         if not isinstance(homing_targets, list):
             homing_targets = [homing_targets]
@@ -179,6 +185,7 @@ class HomingProjectile(BaseProjectile):
         element.team = team
         element.type = projectile_type
         element.was_onscreen_once = False
+        element.damage = damage
 
         element.homing_targets = homing_targets
         element.homing_range = homing_range
@@ -246,12 +253,12 @@ class HomingProjectile(BaseProjectile):
 
 Sprite.register_class(BaseProjectile)
 Sprite.register_class(NormalProjectile)
-
+Sprite.register_class(HomingProjectile)
 for _ in range(200):
     NormalProjectile()
 
 for _ in range(50):
-    ...
+    HomingProjectile()
 
 
 def make_connections():

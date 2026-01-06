@@ -275,6 +275,8 @@ class Sprite:
 
     def is_colliding(self, other : 'Sprite'):
         if not self.rect.colliderect(other.rect): return False
+        if (not other.mask) or (not self.mask):
+            return False
         if self.mask.overlap(other.mask,(other.rect.x - self.rect.x ,other.rect.y - self.rect.y)): return True
         return False
 

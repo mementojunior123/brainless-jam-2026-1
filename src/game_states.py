@@ -1,7 +1,8 @@
 import pygame
-from typing import Any, Generator
+from typing import Any, Generator, TypedDict, Literal, Union
 from math import floor, sin, pi
-from random import shuffle, choice
+from enum import Enum
+from random import shuffle, choice, choices
 import random
 import framework.game.coroutine_scripts
 from framework.game.coroutine_scripts import CoroutineScript
@@ -60,14 +61,48 @@ class NormalGameState(GameState):
             if event.key == pygame.K_p:
                 self.pause()
 
+class WaveData(TypedDict):
+    enemies : dict["EnemyType", int]
+    spawn_cooldown : float
+    spawn_rate_penalty_per_enemy : float
+
+WAVE_DATA : dict[int, WaveData] = {
+    1 : {
+        'enemies' : {
+            'basic' : 5,
+            'elite' : 1
+        },
+        "spawn_cooldown" : 1.5,
+        "spawn_rate_penalty_per_enemy" : 0.0
+    },
+
+    2 : {
+        'enemies' : {
+            'basic' : 8,
+            'elite' : 3,
+        },
+        "spawn_cooldown" : 1.0,
+        "spawn_rate_penalty_per_enemy" : 0.0
+    }
+}
+
 class MainGameState(NormalGameState):
-    def __init__(self, game_object : "Game"):
+    def __init__(self, game_object : "Game", prev_main_state : Union["MainGameState", None] = None, wave_num : int = 1):
         self.game : Game = game_object
-        self.spawn_background()
-        self.player : Player = Player.spawn("midbottom", pygame.Vector2(480, 520))
+        self.player : Player
+        self.screen_size : tuple[int, int]
+        if prev_main_state is None:
+            self.spawn_background()
+            self.player = Player.spawn("midbottom", pygame.Vector2(480, 520))
+            self.screen_size = core_object.main_display.get_size()
+        else:
+            self.player = prev_main_state.player
+            self.screen_size = prev_main_state.screen_size
+        
         self.control_script : MainControlScipt = MainControlScipt()
         self.control_script.initialize(self.game.game_timer.get_time)
-        self.screen_size : tuple[int, int] = core_object.main_display.get_size()
+
+        self.wave_number : int = wave_num
 
     def spawn_background(self):
         bg = Background.spawn(0)
@@ -81,12 +116,17 @@ class MainGameState(NormalGameState):
         Sprite.update_all_sprites(delta)
         Sprite.update_all_registered_classes(delta)
         self.control_script.process_frame(delta)
-        if self.player.check_collision():
+        if self.player.current_hp <= 0:
             self.transition_to_gameover()
+        if self.control_script.is_over:
+            self.transition_to_shop()
+        
 
     def transition_to_gameover(self):
         self.game.state = GameOverGameState(self.game)
-
+    
+    def transition_to_shop(self):
+        self.game.state = ShopGameState(self.game, self.wave_number, self)
 
 class MainControlScipt(CoroutineScript):
     def initialize(self, time_source : TimeSource):
@@ -100,19 +140,113 @@ class MainControlScipt(CoroutineScript):
     
     @staticmethod
     def corou(time_source : TimeSource) -> Generator[None, float, str]:
-        timer : Timer = Timer(-1, time_source)
-        cooldown : Timer = Timer(0.25, time_source)
-        delta : float = yield
         screen_size = core_object.main_display.get_size()
         screen_sizex, screen_sizey = screen_size
         centerx, centery = screen_sizex // 2, screen_sizey // 2
+
+        timer : Timer = Timer(-1, time_source)
+        delta : float = yield
+        wave1_script : BasicWaveControlScript = BasicWaveControlScript()
+        wave1_script.initialize(time_source, 1)
         if delta is None: delta = core_object.dt
         while True:
-            if cooldown.isover():
-                cooldown.set_duration(-1)
-                BasicEnemy.spawn("midtop", pygame.Vector2(centerx, 20))
+            wave1_script.process_frame(delta)
+            if wave1_script.is_over:
+                break
             delta = yield
+        return "Done"
 
+class BasicWaveControlScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, wave_number : int):
+        return super().initialize(time_source, wave_number)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None|str:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def pick_random_enemy(enemy_dict : dict[str, int]) -> str:
+        return choices(list(enemy_dict.keys()), list(enemy_dict.values()))[0]
+    
+    @staticmethod
+    def spawn_enemy(enemy_type : "EnemyType", x_level : int):
+        if enemy_type == EnemyTypes.BASIC.value:
+            BasicEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
+        elif enemy_type == EnemyTypes.ELITE.value:
+            EliteEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
+    
+    @staticmethod
+    def corou(time_source : TimeSource, wave_number : int) -> Generator[None, float, str]:
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+
+        wave_data : WaveData = WAVE_DATA[wave_number]
+        enemies : dict[EnemyType, int] = wave_data["enemies"].copy()
+        spawn_cooldown : float = wave_data["spawn_cooldown"]
+        spawn_rate_penalty_per_enemy : float = wave_data["spawn_rate_penalty_per_enemy"]
+
+        enemy_spawn_timer : Timer = Timer(spawn_cooldown, time_source)
+        wave_timer : Timer = Timer(-1, time_source)
+        delta : float = yield
+        if delta is None: delta = core_object.dt
+        while any(enemies[k] > 0 for k in enemies):
+            if enemy_spawn_timer.isover():
+                enemy_spawn_timer.set_duration(spawn_cooldown + spawn_rate_penalty_per_enemy * len(BaseEnemy.active_elements))
+                enemy_type_chosen : EnemyType = BasicWaveControlScript.pick_random_enemy(enemies)
+                enemies[enemy_type_chosen] -= 1
+                BasicWaveControlScript.spawn_enemy(enemy_type_chosen, centerx)
+            delta = yield
+        while BaseEnemy.active_elements:
+            delta = yield
+        return "Done"
+
+class ShopGameState(NormalGameState):
+    def __init__(self, game_object : "Game", finished_wave : int, prev : "MainGameState"):
+        self.game : "Game" = game_object
+        self.prev : MainGameState = prev
+        self.finished_wave : int = finished_wave
+        self.control_script : ShopControlScript = ShopControlScript()
+        self.control_script.initialize(self.game.game_timer.get_time)
+        self.game.alert_player("Shop entered!")
+        print("hello")
+    
+    def main_logic(self, delta : float):
+        Sprite.update_all_sprites(delta)
+        Sprite.update_all_registered_classes(delta)
+        self.control_script.process_frame(delta)
+        if self.control_script.is_over:
+            self.transition_to_main()
+    
+    def transition_to_main(self):
+        self.game.alert_player("Shop exited!")
+        print("bye")
+        self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1)
+
+class ShopControlScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource):
+        return super().initialize(time_source)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None|str:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def corou(time_source : TimeSource) -> Generator[None, float, str]:
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+
+        timer : Timer = Timer(2, time_source)
+        yield
+        delta : float = core_object.dt
+        while not timer.isover():
+            delta = yield
+        return "Done"
 
 class GameOverGameState(GameState):
     def __init__(self, game_object : "Game"):
@@ -187,9 +321,9 @@ def runtime_imports():
     import src.sprites.player
     from src.sprites.player import Player
 
-    global BaseEnemy, BasicEnemy
+    global BaseEnemy, BasicEnemy, EliteEnemy, EnemyTypes, EnemyType
     import src.sprites.enemy
-    from src.sprites.enemy import BaseEnemy, BasicEnemy
+    from src.sprites.enemy import BaseEnemy, BasicEnemy, EliteEnemy, EnemyTypes, EnemyType
     src.sprites.enemy.runtime_imports()
 
 class NetworkTestGameState(NormalGameState):

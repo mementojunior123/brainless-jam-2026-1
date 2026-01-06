@@ -1,7 +1,7 @@
 import pygame
 from typing import Generator
 from framework.game.sprite import Sprite
-from framework.utils.helpers import load_alpha_to_colorkey
+from framework.utils.helpers import load_alpha_to_colorkey, recolor_image
 from framework.utils.my_timer import Timer, TimeSource
 from framework.core.core import core_object
 from framework.game.coroutine_scripts import CoroutineScript
@@ -32,6 +32,10 @@ class Player(Sprite):
         self.animation_script : PlayerAnimationScript
         self.velocity : pygame.Vector2
 
+        self.max_hp : int
+        self.current_hp : int
+        self.visible : bool
+
         self.shot_cooldown_timer : Timer
         Player.inactive_elements.append(self)
 
@@ -54,14 +58,23 @@ class Player(Sprite):
         element.animation_script.initialize(core_object.game.game_timer.get_time, element, 0.25)
 
         element.shot_cooldown_timer = Timer(Player.BASE_SHOT_COOLDOWN, core_object.game.game_timer.get_time)
+        element.visible = True
+
+        element.max_hp = 3
+        element.current_hp = element.max_hp
 
         cls.unpool(element)
         return element
+
+    def draw(self, display : pygame.Surface):
+        if not self.visible: return
+        return super().draw(display)
     
     def update(self, delta: float):
         self.animation_script.process_frame()
         self.update_movement(delta)
         self.check_input()
+        self.check_collision()
 
     def update_movement(self, delta : float):
         accel = self.calculate_acceleration()
@@ -108,18 +121,35 @@ class Player(Sprite):
         if not (self.shot_cooldown_timer.isover() or ignore_cooldown):
             return None
         self.shot_cooldown_timer.restart()
-        return HomingProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -5), None, None, 0,
-                                       BaseProjectile.rocket_image, homing_range=300, homing_rate=3,
-                                       homing_targets=BaseEnemy, team=Teams.ALLIED)
+        return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -10), None, None, 0,
+                                       recolor_image(BaseProjectile.normal_image4, "White"), team=Teams.ALLIED)
+
     
+    def take_damage(self, damage : int):
+        print(f"Player took damage : {damage}")
+        self.current_hp -= damage
+
     def check_collision(self):
         colliding_projectiles : list[BaseProjectile] = [elem for elem in self.get_all_colliding(BaseProjectile) if elem.team in (Teams.ENEMY, Teams.FFA)]
         colliding_enemies : list[BaseEnemy] = self.get_all_colliding(BaseEnemy)
-        if colliding_projectiles or colliding_enemies:
-            return True
+        for enemy in colliding_enemies:
+            self.take_damage(1)
+            enemy.kill_instance()
+        for proj in colliding_projectiles:
+            self.take_damage(proj.damage)
+            proj.kill_instance()
 
     def clean_instance(self):
         super().clean_instance()
+        self.animation_images = None
+        self.animation_script = None
+        self.velocity = None
+
+        self.max_hp = None
+        self.current_hp = None
+        self.visible = None
+
+        self.shot_cooldown_timer = None
 
 class PlayerAnimationScript(CoroutineScript):
     def initialize(self, time_source : TimeSource, player : Player, cycle_time : float):
