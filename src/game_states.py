@@ -69,7 +69,8 @@ class WaveData(TypedDict):
 WAVE_DATA : dict[int, WaveData] = {
     1 : {
         'enemies' : {
-            'basic' : 5,
+            'basic' : 0,
+            'gunner' : 1,
         },
         "spawn_cooldown" : 3.0,
         "spawn_rate_penalty_per_enemy" : 1.2
@@ -194,6 +195,10 @@ class BasicWaveControlScript(CoroutineScript):
             BasicEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
         elif enemy_type == EnemyTypes.ELITE.value:
             EliteEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
+        elif enemy_type == EnemyTypes.GUNNER.value:
+            GunnerEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
+        else:
+            print("Enemy type not found!")
     
     @staticmethod
     def corou(time_source : TimeSource, wave_number : int) -> Generator[None, float, str]:
@@ -338,9 +343,9 @@ def runtime_imports():
     import src.sprites.player
     from src.sprites.player import Player
 
-    global BaseEnemy, BasicEnemy, EliteEnemy, EnemyTypes, EnemyType
+    global BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType
     import src.sprites.enemy
-    from src.sprites.enemy import BaseEnemy, BasicEnemy, EliteEnemy, EnemyTypes, EnemyType
+    from src.sprites.enemy import BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType
     src.sprites.enemy.runtime_imports()
 
 class NetworkTestGameState(NormalGameState):
