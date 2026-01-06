@@ -19,6 +19,10 @@ from src.game_states import GameState, GameStates, initialise_game
 import framework.utils.particle_effects
 
 class Game:
+    font_20 = pygame.Font('assets/fonts/Pixeltype.ttf', 20)
+    font_25 = pygame.Font('assets/fonts/Pixeltype.ttf', 25)
+    font_28 = pygame.Font('assets/fonts/Pixeltype.ttf', 28)
+    font_30 = pygame.Font('assets/fonts/Pixeltype.ttf', 30)
     font_40 = pygame.Font('assets/fonts/Pixeltype.ttf', 40)
     font_50 = pygame.Font('assets/fonts/Pixeltype.ttf', 50)
     font_60 = pygame.Font('assets/fonts/Pixeltype.ttf', 60)

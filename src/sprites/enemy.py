@@ -63,10 +63,23 @@ class BaseEnemy(Sprite):
         self.type = None
         self.health = None
 
-class BasicEnemy(BaseEnemy):
+class BaseNormalEnemy(BaseEnemy):
+    active_elements : list['BaseNormalEnemy'] = []
+    inactive_elements : list['BaseNormalEnemy'] = []
+    linked_classes : list['Sprite'] = [Sprite, BaseEnemy]
+
+    def __init__(self) -> None:
+        super().__init__()
+        BaseNormalEnemy.inactive_elements.append(self)
+
+    @classmethod
+    def spawn(cls, position_anchor : str, position : int|pygame.Vector2):
+        raise NotImplementedError("Cannot instanciate base-class BaseEnemy; sub-class must implement this method")
+
+class BasicEnemy(BaseNormalEnemy):
     active_elements : list['BasicEnemy'] = []
     inactive_elements : list['BasicEnemy'] = []
-    linked_classes : list['Sprite'] = [Sprite, BaseEnemy]
+    linked_classes : list['Sprite'] = [Sprite, BaseEnemy, BaseNormalEnemy]
     BASE_SPEED : float = 4.0
     APPROCH_RATE : int = 100
     def __init__(self):
@@ -163,10 +176,10 @@ class BasicEnemyControlScript(CoroutineScript):
                 shot_timer.set_duration(random.uniform(1.7, 3))
             delta = yield
 
-class EliteEnemy(BaseEnemy):
+class EliteEnemy(BaseNormalEnemy):
     active_elements : list['EliteEnemy'] = []
     inactive_elements : list['EliteEnemy'] = []
-    linked_classes : list['Sprite'] = [Sprite, BaseEnemy]
+    linked_classes : list['Sprite'] = [Sprite, BaseEnemy, BaseNormalEnemy]
     BASE_SPEED : float = 6.0
     APPROCH_RATE : int = 100
 
@@ -265,10 +278,10 @@ class EliteEnemyControlScript(CoroutineScript):
                 shot_timer.set_duration(random.uniform(0.5, 1.5))
             delta = yield
 
-class GunnerEnemy(BaseEnemy):
+class GunnerEnemy(BaseNormalEnemy):
     active_elements : list['GunnerEnemy'] = []
     inactive_elements : list['GunnerEnemy'] = []
-    linked_classes : list['Sprite'] = [Sprite, BaseEnemy]
+    linked_classes : list['Sprite'] = [Sprite, BaseEnemy, BaseNormalEnemy]
     BASE_SPEED : float = 3.0
 
     gunner_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/enemy/gunner_enemy.png", (0, 255, 0))

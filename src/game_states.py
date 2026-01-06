@@ -69,7 +69,7 @@ class WaveData(TypedDict):
 WAVE_DATA : dict[int, WaveData] = {
     1 : {
         'enemies' : {
-            'basic' : 5,
+            'basic' : 1,
         },
         "spawn_cooldown" : 2.9,
         "spawn_rate_penalty_per_enemy" : 1.0
@@ -244,41 +244,165 @@ class ShopGameState(NormalGameState):
         self.prev : MainGameState = prev
         self.finished_wave : int = finished_wave
         self.control_script : ShopControlScript = ShopControlScript()
-        self.control_script.initialize(self.game.game_timer.get_time)
+        self.candidates : dict["UpgradeType", float|int] = self.pick_candidates()
+        self.control_script.initialize(self.game.game_timer.get_time, self.candidates, self.prev.player)
         self.game.alert_player("Shop entered!")
+
+    def pick_candidates(self, count : int = 3) -> dict["UpgradeType", float|int]:
+        candidates : dict[UpgradeType, float|int]
+        if self.finished_wave % 5 != 0:
+            candidates = {
+                'RegularDamageBonus' : 1,
+                'SpecialDamageMultipler' : 0.2,
+                'AllDamageMultiplier' : 0.1,
+
+                'RegularFirerateMultiplier' : 0.2,
+                'SpecialFirerateMultiplier' : 0.2,
+                'AllFirerateMultiplier' : 0.1,
+
+                'MaxHealthBonus' : 1,
+                'HealHealth' : 2,
+            }
+        else:
+            candidates = {
+                'AllDamageMultiplier' : 0.6,
+                'AllFirerateMultiplier' : 0.6,
+
+                'HealMax' : 999,
+                'AlternateFireType' : random.choice([AlternateFireTypes.SHOTGUN.value])
+            }
+        amount_chosen : int = min(count, len(candidates))
+        candidate_list : list[UpgradeType] = list(candidates.keys())
+        random.shuffle(candidate_list)
+        chosen : list[UpgradeType] = candidate_list[:amount_chosen]
+        return {upgrade : candidates[upgrade] for upgrade in chosen}
+
+    def apply_upgrade(self, upgrade_type : "UpgradeType"):
+        if upgrade_type is None:
+            core_object.log("Did not apply an upgrade")
+            return
+        upgrade_value : float|int = self.candidates[upgrade_type]
+        core_object.log(f"Applied upgrade - {upgrade_type}: {upgrade_value}")
+            
     
     def main_logic(self, delta : float):
         Sprite.update_all_sprites(delta)
         Sprite.update_all_registered_classes(delta)
-        self.control_script.process_frame(delta)
+        result = self.control_script.process_frame(delta)
         if self.control_script.is_over:
+            self.apply_upgrade(result)
             self.transition_to_main()
     
     def transition_to_main(self):
         self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1)
 
 class ShopControlScript(CoroutineScript):
-    def initialize(self, time_source : TimeSource):
-        return super().initialize(time_source)
+    def initialize(self, time_source : TimeSource, upgrades : dict["UpgradeType", float|int], player : "Player"):
+        return super().initialize(time_source, upgrades, player)
     
     def type_hints(self):
         self.coro_attributes = []
     
-    def process_frame(self, values : float) -> None|str:
+    def process_frame(self, values : float) -> Union[None, "UpgradeType"]:
         return super().process_frame(values)
     
     @staticmethod
-    def corou(time_source : TimeSource) -> Generator[None, float, str]:
+    def generate_x_positions(nb : int, centerx : int) -> list[int]:
+        GAP : int = 60 + UpgradeCard.default_image.get_size()[0]
+        result : list[int] = []
+        if nb % 2 == 1:
+            result.append(centerx)
+            for dx in range((nb - 1) // 2):
+                result.append(centerx - GAP * dx - GAP)
+                result.append(centerx + GAP * dx + GAP)
+        else:
+            for dx in range(nb // 2):
+                result.append(centerx - GAP * dx - GAP // 2)
+                result.append(centerx + GAP * dx + GAP // 2)
+        return result
+    
+    @staticmethod
+    def get_improvement_text(upgrade_type : "UpgradeType", upgrade_value : int|float) -> str:
+        return ""
+    
+    @staticmethod
+    def format_card_text(upgrade_type : "UpgradeType", upgrade_value : int|float) -> list[tuple[str, int, int|str]]:
+        DEFAULT_FONT_SIZE : int = 28
+        match upgrade_type:
+            case 'AllDamageMultiplier':
+                return [(f"+{upgrade_value:.0%} damage\nto all weapons", 50, DEFAULT_FONT_SIZE)]
+            case 'AllFirerateMultiplier':
+                return [(f"+{upgrade_value:.0%} firerate\nwith every weapon", 50, DEFAULT_FONT_SIZE)]
+            case 'AlternateFireType':
+                return [
+                    (f"New special attack:", 50, DEFAULT_FONT_SIZE), 
+                    (src.sprites.player.alternate_fire_base_stats[upgrade_value]['name'], 100, DEFAULT_FONT_SIZE),
+                    (src.sprites.player.alternate_fire_base_stats[upgrade_value]['description'], 150, DEFAULT_FONT_SIZE)
+                ]
+            case 'HealHealth':
+                return [(f"Heal up to {upgrade_value} health", 50, DEFAULT_FONT_SIZE)]
+            case 'HealMax':
+                return [(f"Heal up to max HP", 50, DEFAULT_FONT_SIZE)]
+            case 'MaxHealthBonus':
+                return [(f"Increase max health\nby {upgrade_value}", 50, DEFAULT_FONT_SIZE)] 
+            case 'RegularDamageBonus':
+                return [(f"Increase normal\nprojectile damage by {upgrade_value:.1f}", 50, DEFAULT_FONT_SIZE)]
+            case 'RegularFirerateMultiplier':
+                return [(f"Increase normal\nprojectile firerate by {upgrade_value:.0%}", 50, DEFAULT_FONT_SIZE)]
+            case 'SpecialDamageMultipler':
+                return [(f"Increase special attack\ndamage by {upgrade_value:.0%}", 50, DEFAULT_FONT_SIZE)]
+            case 'SpecialFirerateMultiplier':
+                return [(f"Increase special attack\nfirerate by {upgrade_value:.0%}", 50, DEFAULT_FONT_SIZE)]
+
+            case _:
+                return [("Unknown upgrade", 50, DEFAULT_FONT_SIZE), (upgrade_type, 100, DEFAULT_FONT_SIZE), (str(upgrade_value), 150, DEFAULT_FONT_SIZE)]
+
+    
+    @staticmethod
+    def corou(time_source : TimeSource, upgrades : dict["UpgradeType", float|int], player : "Player") -> Generator[None, float, "UpgradeType"]:
         screen_size = core_object.main_display.get_size()
         screen_sizex, screen_sizey = screen_size
         centerx, centery = screen_sizex // 2, screen_sizey // 2
 
-        timer : Timer = Timer(2, time_source)
+        delay_timer : Timer = Timer(2, time_source)
+        x_positions : list[int] = ShopControlScript.generate_x_positions(len(upgrades), centerx)
+        cards : list[UpgradeCard] = []
+        card_dict : dict[UpgradeType, UpgradeCard] = {}
+        for pos, upgrade_type, upgrade_value in zip(x_positions, upgrades.keys(), upgrades.values()):
+            card = UpgradeCard.spawn(pos, ShopControlScript.format_card_text(upgrade_type, upgrade_value))
+            cards.append(card)
+            card_dict[upgrade_type] = card
+        player.can_shoot = False
         yield
         delta : float = core_object.dt
-        while not timer.isover():
+        while not delay_timer.isover():
             delta = yield
-        return "Done"
+        player.can_shoot = True
+        to_remove : list[UpgradeCard] = []
+        while True:
+            picked_card : UpgradeCard|None = None
+            for card in cards:
+                if card.check_collisions():
+                    picked_card = card
+                    break
+            if picked_card:
+                break
+            delta = yield
+        for card in cards:
+            if card != picked_card:
+                card.when_not_picked()
+        picked_card.when_picked()
+        picked_upgrade_type : UpgradeType = ([k for k in card_dict if card_dict[k] == picked_card])[0]
+
+        while cards:
+            to_remove.clear()
+            for card in cards:
+                if not card.active:
+                    to_remove.append(card)
+            for card in to_remove:
+                cards.remove(card)
+            delta = yield
+        return picked_upgrade_type
 
 class GameOverGameState(GameState):
     def __init__(self, game_object : "Game"):
@@ -349,9 +473,13 @@ def runtime_imports():
     import src.sprites.background
     from src.sprites.background import Background
 
-    global Player
+    global Player, Upgrades, UpgradeType, AlternateFireTypes, AlternateFireBaseStatLine
     import src.sprites.player
-    from src.sprites.player import Player
+    from src.sprites.player import Player, Upgrades, UpgradeType, AlternateFireTypes, AlternateFireBaseStatLine
+
+    global UpgradeCard
+    import src.sprites.upgrade_card
+    from src.sprites.upgrade_card import UpgradeCard
 
     global BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType
     import src.sprites.enemy

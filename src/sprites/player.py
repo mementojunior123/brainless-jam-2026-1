@@ -8,7 +8,7 @@ from framework.game.coroutine_scripts import CoroutineScript
 import src.sprites.projectiles
 from src.sprites.projectiles import NormalProjectile, BaseProjectile, HomingProjectile, Teams
 import src.sprites.enemy
-from src.sprites.enemy import BaseEnemy, BasicEnemy
+from src.sprites.enemy import BaseEnemy, BaseNormalEnemy
 from enum import Enum
 
 
@@ -17,9 +17,30 @@ class AlternateFireTypes(Enum):
     SHOTGUN = 1
 
 UpgradeType : TypeAlias = Literal['RegularDamageBonus', 'SpecialDamageMultipler', 'AllDamageMultiplier',
-                                  'RegularFirerateMultiplier', 'SpecialFirerateMultiplier', 'AllFirerateMultiplier'
-                                  'AlternateFireType', 'AlternateFireBaseDamage', 'AlternateFireBaseFireRate'
-                                  'HealthBonus']
+                                  'RegularFirerateMultiplier', 'SpecialFirerateMultiplier', 'AllFirerateMultiplier',
+                                  'AlternateFireType', 'MaxHealthBonus', 'HealHealth', 'HealMax']
+
+class AlternateFireBaseStatLine(TypedDict):
+    damage : float
+    firerate : float
+    name : str
+    description : str
+
+alternate_fire_base_stats : dict[int, AlternateFireBaseStatLine] = {
+    AlternateFireTypes.LAZER.value : {
+        'damage' : 5,
+        'firerate' : 0.25,
+        'name' : 'Lazer',
+        'description' : 'a lazer type weapon'
+    },
+
+    AlternateFireTypes.SHOTGUN.value : {
+        'damage' : 2,
+        'firerate' : 0.4,
+        'name' : 'Shotgun',
+        'description' : 'a shotgun type weapon'
+    }
+}
 
 class Upgrades(TypedDict):
     RegularDamageBonus : float
@@ -33,7 +54,8 @@ class Upgrades(TypedDict):
     AlternateFireType : int
     AlternateFireBaseDamage : float # Shotgun damage is per-pellet
     AlternateFireBaseFireRate : float
-    HealthBonus : int
+
+    MaxHealthBonus : int
 
 class Player(Sprite):
     active_elements : list['Player'] = []
@@ -66,6 +88,8 @@ class Player(Sprite):
         self.shot_cooldown_timer : Timer
         self.alternate_fire_cooldown_timer : Timer
         self.upgrades : Upgrades
+        self.invuln_timer : Timer
+        self.invincible : bool
         Player.inactive_elements.append(self)
     
     @staticmethod
@@ -80,9 +104,10 @@ class Player(Sprite):
             'AllFirerateMultiplier' : 1,
 
             'AlternateFireType' : AlternateFireTypes.LAZER.value,
-            'AlternateFireBaseDamage' : 5,
-            'AlternateFireBaseFireRate' : 0.25,
-            'HealthBonus' : 0,
+            'AlternateFireBaseDamage' : alternate_fire_base_stats[AlternateFireTypes.LAZER.value]['damage'],
+            'AlternateFireBaseFireRate' :alternate_fire_base_stats[AlternateFireTypes.LAZER.value]['firerate'],
+            
+            'MaxHealthBonus' : 0,
         }
 
     @classmethod
@@ -113,6 +138,9 @@ class Player(Sprite):
         element.current_hp = element.max_hp
         element.can_shoot = True
         element.upgrades = Player.get_default_upgrades()
+        element.invuln_timer = Timer(0.6, core_object.game.game_timer.get_time)
+        element.invuln_timer.start_time -= 0.6
+        element.invincible = False
 
         cls.unpool(element)
         return element
@@ -215,15 +243,19 @@ class Player(Sprite):
         return proj_list
     
     def take_damage(self, damage : float):
+        if (not self.invuln_timer.isover()) or self.invincible or isinstance(core_object.game.state, core_object.game.STATES.ShopGameState):
+            return
         core_object.log(f"Player took damage : {damage}")
         self.current_hp -= damage
+        self.invuln_timer.restart()
 
     def check_collision(self):
         colliding_projectiles : list[BaseProjectile] = [elem for elem in self.get_all_colliding(BaseProjectile) if elem.team in (Teams.ENEMY, Teams.FFA)]
         colliding_enemies : list[BaseEnemy] = self.get_all_colliding(BaseEnemy)
         for enemy in colliding_enemies:
             self.take_damage(1)
-            enemy.kill_instance()
+            if isinstance(enemy, BaseNormalEnemy):
+                enemy.kill_instance()
         for proj in colliding_projectiles:
             self.take_damage(proj.damage)
             proj.kill_instance()
@@ -242,6 +274,9 @@ class Player(Sprite):
         self.alternate_fire_cooldown_timer = None
         self.upgrades = None
         self.can_shoot = None
+
+        self.invuln_timer = None
+        self.invincible = None
 
 class PlayerAnimationScript(CoroutineScript):
     def initialize(self, time_source : TimeSource, player : Player, cycle_time : float):
@@ -264,6 +299,10 @@ class PlayerAnimationScript(CoroutineScript):
                 player.image = player.animation_images[image_index]
                 player.mask = pygame.mask.from_surface(player.image)
                 prev_index = image_index
+            if player.invuln_timer.isover():
+                player.visible = True
+            else:
+                player.visible = (int(player.invuln_timer.get_time() / player.invuln_timer.duration * 3) % 2) != 0
             yield
 
 
