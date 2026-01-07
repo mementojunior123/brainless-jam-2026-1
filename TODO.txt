@@ -7,14 +7,14 @@ You also get major upgrades right before the final boss
 --Necessary-- (Things i have to do now)
 -Implement boss waves
     (Reflectors friendly/enemy?)
--Add feedback for when secondary fire is ready
 
 --High-- (Things I need to do before the end of the jam)
 -Implement proper enemy entries
--Add a mechanic that allows the player to dodge
+-Add a mechanic that allows the player to dodge (??)
 -Balance the game more
 -Add some music
--Add a few sound effects
+-Add a few sound effects 
+    (damage taken, enemy hit, alternate fire cooldown over, normal/special shot fired,)
 -Implement destroyable projectiles
 -Add more upgrades
 -Add basic informations to the menu (high-score, controls)
