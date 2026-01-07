@@ -29,7 +29,7 @@ class AlternateFireBaseStatLine(TypedDict):
 alternate_fire_base_stats : dict[int, AlternateFireBaseStatLine] = {
     AlternateFireTypes.LAZER.value : {
         'damage' : 4,
-        'firerate' : 0.4,
+        'firerate' : 0.6,
         'name' : 'Lazer',
         'description' : 'a lazer type weapon'
     },

@@ -365,9 +365,16 @@ enemy_killed : EffectData = {'offset_x' : [-8, 8], 'offset_y' : [-8, 8], 'veloci
             'update_method' : 'simulated', 'destroy_offscreen' : True, 'copy_surface' : True, 'type' : None
 }
 
+boss_killed : EffectData = {'offset_x' : [-8, 8], 'offset_y' : [-8, 8], 'velocity_x' : [0,0], 'velocity_y' : [-3.0,-3.0], 'angle' : [0, 360], 'speed' : [5, 5],
+            'accel_x' : [0,0], 'accel_y' : [0.12,0.15], 'drag' : [0, 0],
+            'init_spawn_count' : 35, 'cooldown' : 0.20, 'target_spawn_count' : 35, 'lifetime' : [5,5], 'part_per_wave' : 35,
+            'main_texture' : Particle.test_image, 'alt_textures' : None, "animation" : Animation.get_animation('enemy_killed_particle_alpha_gradient'),
+            'update_method' : 'simulated', 'destroy_offscreen' : True, 'copy_surface' : True, 'type' : None
+}
+
 
 ParticleEffect.effects_data = {'test' : test_effect, 'test2' : test_effect2, 'enemy_damaged' : enemy_damaged,
-                               'enemy_killed' : enemy_killed}
+                               'enemy_killed' : enemy_killed, 'boss_killed' : boss_killed}
 
 def runtime_imports():
     global core_object

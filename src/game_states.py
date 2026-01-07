@@ -65,6 +65,7 @@ class WaveData(TypedDict):
     enemies : dict["EnemyType", int]
     spawn_cooldown : float
     spawn_rate_penalty_per_enemy : float
+    bosses : list["BossType"]
 
 WAVE_DATA : dict[int, WaveData] = {
     1 : {
@@ -72,47 +73,107 @@ WAVE_DATA : dict[int, WaveData] = {
             'basic' : 5,
         },
         "spawn_cooldown" : 2.9,
-        "spawn_rate_penalty_per_enemy" : 1.0
+        "spawn_rate_penalty_per_enemy" : 1.0,
+        'bosses' : []
     },
 
     2 : {
         'enemies' : {
-            'basic' : 8,
+            'basic' : 4,
             'elite' : 1,
             'gunner' : 1,
         },
         "spawn_cooldown" : 2.7,
-        "spawn_rate_penalty_per_enemy" : 1
+        "spawn_rate_penalty_per_enemy" : 1,
+        'bosses' : []
     },
 
     3 : {
         'enemies' : {
-            'basic' : 8,
+            'basic' : 5,
             'elite' : 3,
             'gunner' : 2,
         },
         "spawn_cooldown" : 2.4,
-        "spawn_rate_penalty_per_enemy" : 0.5
+        "spawn_rate_penalty_per_enemy" : 0.5,
+        'bosses' : []
     },
 
     4 : {
         'enemies' : {
-            'basic' : 8,
+            'basic' : 6,
             'elite' : 5,
             'gunner' : 3
         },
         "spawn_cooldown" : 2.1,
-        "spawn_rate_penalty_per_enemy" : 0.2
+        "spawn_rate_penalty_per_enemy" : 0.2,
+        'bosses' : []
     },
 
     5 : {
         'enemies' : {
-            'basic' : 8,
-            'elite' : 5,
-            'gunner' : 3
+            'basic' : 6,
+            'elite' : 6,
+            'gunner' : 4
         },
         "spawn_cooldown" : 2.0,
-        "spawn_rate_penalty_per_enemy" : 0.2
+        "spawn_rate_penalty_per_enemy" : 0.2,
+        'bosses' : ['basic_boss']
+    },
+
+    6 : {
+        'enemies' : {
+            'basic' : 7,
+            'elite' : 6,
+            'gunner' : 5
+        },
+        "spawn_cooldown" : 1.9,
+        "spawn_rate_penalty_per_enemy" : 0.0,
+        'bosses' : []
+    },
+
+    7 : {
+        'enemies' : {
+            'basic' : 4,
+            'elite' : 8,
+            'gunner' : 6
+        },
+        "spawn_cooldown" : 1.8,
+        "spawn_rate_penalty_per_enemy" : 0,
+        'bosses' : []
+    },
+
+    8 : {
+        'enemies' : {
+            'basic' : 4,
+            'elite' : 8,
+            'gunner' : 6
+        },
+        "spawn_cooldown" : 1.7,
+        "spawn_rate_penalty_per_enemy" : 0,
+        'bosses' : []
+    },
+
+    9 : {
+        'enemies' : {
+            'basic' : 4,
+            'elite' : 10,
+            'gunner' : 6
+        },
+        "spawn_cooldown" : 1.6,
+        "spawn_rate_penalty_per_enemy" : 0.0,
+        'bosses' : []
+    },
+
+    10 : {
+        'enemies' : {
+            'basic' : 4,
+            'elite' : 10,
+            'gunner' : 6
+        },
+        "spawn_cooldown" : 1.5,
+        "spawn_rate_penalty_per_enemy" : 0.0,
+        'bosses' : ['basic_boss']
     },
 }
 
@@ -213,6 +274,14 @@ class BasicWaveControlScript(CoroutineScript):
             core_object.log(f"Enemy type '{enemy_type}' not found!")
     
     @staticmethod
+    def spawn_boss(boss_type : "BossType") -> "BaseBoss":
+        core_object.game.alert_player("Boss incoming!")
+        if boss_type == "basic_boss":
+            return BasicBoss.spawn()
+        else:
+            core_object.log(f"Enemy type '{boss_type}' not found")
+    
+    @staticmethod
     def corou(time_source : TimeSource, wave_number : int) -> Generator[None, float, str]:
         screen_size = core_object.main_display.get_size()
         screen_sizex, screen_sizey = screen_size
@@ -222,6 +291,7 @@ class BasicWaveControlScript(CoroutineScript):
         enemies : dict[EnemyType, int] = wave_data["enemies"].copy()
         spawn_cooldown : float = wave_data["spawn_cooldown"]
         spawn_rate_penalty_per_enemy : float = wave_data["spawn_rate_penalty_per_enemy"]
+        bosses : list[BossType] = wave_data['bosses'].copy()
 
         enemy_spawn_timer : Timer = Timer(1.5, time_source)
         wave_timer : Timer = Timer(-1, time_source)
@@ -233,7 +303,21 @@ class BasicWaveControlScript(CoroutineScript):
                 enemy_type_chosen : EnemyType = BasicWaveControlScript.pick_random_enemy(enemies)
                 enemies[enemy_type_chosen] -= 1
                 BasicWaveControlScript.spawn_enemy(enemy_type_chosen, random.randint(100, screen_sizex - 100))
+            if pygame.key.get_pressed()[pygame.K_p]:
+                bosses.clear()
+            if pygame.key.get_pressed()[pygame.K_o]:    
+                enemies.clear()
             delta = yield
+        while BaseEnemy.active_elements:
+            delta = yield
+        if bosses:
+            active_boss : BaseBoss = BasicWaveControlScript.spawn_boss(bosses[0])
+            bosses.pop(0)
+            while bosses:
+                if not active_boss.active:
+                    active_boss : BaseBoss = BasicWaveControlScript.spawn_boss(bosses[0])
+                    bosses.pop(0)
+                delta = yield
         while BaseEnemy.active_elements:
             delta = yield
         return "Done"
@@ -265,10 +349,8 @@ class ShopGameState(NormalGameState):
             }
         else:
             candidates = {
-                'AllDamageMultiplier' : 0.6,
-                'AllFirerateMultiplier' : 0.6,
-
-                'HealMax' : 999,
+                'AllDamageMultiplier' : 0.5,
+                'AllFirerateMultiplier' : 0.5,
                 'AlternateFireType' : random.choice([AlternateFireTypes.SHOTGUN.value])
             }
         amount_chosen : int = min(count, len(candidates))
@@ -516,10 +598,14 @@ def runtime_imports():
     import src.sprites.upgrade_card
     from src.sprites.upgrade_card import UpgradeCard
 
-    global BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType
+    global BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType, BossTypes, BossType
     import src.sprites.enemy
-    from src.sprites.enemy import BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType
+    from src.sprites.enemy import BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType, BossTypes, BossType
     src.sprites.enemy.runtime_imports()
+
+    global BasicBoss, BaseBoss
+    import src.sprites.bosses
+    from src.sprites.bosses import BasicBoss, BaseBoss
 
 class NetworkTestGameState(NormalGameState):
     def __init__(self, game_object : 'Game'):

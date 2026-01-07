@@ -23,7 +23,7 @@ class BaseEnemy(Sprite):
     display_size : tuple[int, int] = core_object.main_display.get_size()
     def __init__(self) -> None:
         super().__init__()
-        self.type : EnemyType
+        self.type : EnemyType|BossType
         self.health : float
         BaseEnemy.inactive_elements.append(self)
 
@@ -512,12 +512,18 @@ class EnemyTypes(Enum):
 
 EnemyType : TypeAlias = Literal['basic', 'elite', 'gunner']
 
+class BossTypes(Enum):
+    BASIC_BOSS = 'basic_boss'
+
+BossType : TypeAlias = Literal['basic_boss']
+
 def runtime_imports():
     global Player, src
     from src.sprites.player import Player
     import src.sprites.player
 
 Sprite.register_class(BaseEnemy)
+Sprite.register_class(BaseNormalEnemy)
 Sprite.register_class(BasicEnemy)
 Sprite.register_class(EliteEnemy)
 Sprite.register_class(GunnerEnemy)
