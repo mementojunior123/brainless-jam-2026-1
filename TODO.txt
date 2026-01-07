@@ -23,6 +23,7 @@ You also get major upgrades right before the final boss
 -Improve the player sprites/animation
 -Improve background sprite
 -Improve enemy sprite
+-Improve projectile sprites
 -Add an animation for basic enemies
 -Improve the menu
 -Add defensive upgrades

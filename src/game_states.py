@@ -69,7 +69,7 @@ class WaveData(TypedDict):
 WAVE_DATA : dict[int, WaveData] = {
     1 : {
         'enemies' : {
-            'basic' : 1,
+            'basic' : 5,
         },
         "spawn_cooldown" : 2.9,
         "spawn_rate_penalty_per_enemy" : 1.0

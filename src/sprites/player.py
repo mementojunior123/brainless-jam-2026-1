@@ -28,15 +28,15 @@ class AlternateFireBaseStatLine(TypedDict):
 
 alternate_fire_base_stats : dict[int, AlternateFireBaseStatLine] = {
     AlternateFireTypes.LAZER.value : {
-        'damage' : 5,
-        'firerate' : 0.25,
+        'damage' : 4,
+        'firerate' : 0.4,
         'name' : 'Lazer',
         'description' : 'a lazer type weapon'
     },
 
     AlternateFireTypes.SHOTGUN.value : {
         'damage' : 2,
-        'firerate' : 0.4,
+        'firerate' : 0.6,
         'name' : 'Shotgun',
         'description' : 'a shotgun type weapon'
     }
@@ -222,7 +222,7 @@ class Player(Sprite):
         normal_firerate : float = (Player.BASE_SHOT_FIRERATE * self.upgrades['RegularFirerateMultiplier']) * self.upgrades['AllFirerateMultiplier']
         self.shot_cooldown_timer.set_duration(1 / normal_firerate)
         return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -10), None, None, 0,
-                                       recolor_image(BaseProjectile.normal_image4, "White"), team=Teams.ALLIED,
+                                       recolor_image(BaseProjectile.normal_image3, "White"), team=Teams.ALLIED,
                                        damage = normal_damage)
 
     def perform_alternate_fire(self, ignore_cooldown : bool = False) -> BaseProjectile|None:
@@ -247,10 +247,10 @@ class Player(Sprite):
     
     def fire_shotgun(self, damage : int) -> list[NormalProjectile]:
         proj_list : list[NormalProjectile] = []
-        for angle in (-30, -15, 0, 15, 30):
+        for angle in (-20, -10, 0, 10, 20):
             proj_list.append(
                 NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -13).rotate(angle),
-                        None, None, angle, recolor_image(BaseProjectile.normal_image3, "White"), team=Teams.ALLIED,
+                        None, None, angle, recolor_image(BaseProjectile.normal_image4, "White"), team=Teams.ALLIED,
                         damage=damage)
             )
         return proj_list
