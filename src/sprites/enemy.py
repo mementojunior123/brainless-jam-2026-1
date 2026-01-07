@@ -9,6 +9,7 @@ import src.sprites.projectiles
 from src.sprites.projectiles import NormalProjectile, BaseProjectile, HomingProjectile, Teams
 import random
 from enum import Enum
+from framework.utils.particle_effects import ParticleEffect
 
 class BaseEnemy(Sprite):
     active_elements : list['BaseEnemy'] = []
@@ -117,13 +118,18 @@ class BasicEnemy(BaseNormalEnemy):
 
     def when_hit(self, projectile : BaseProjectile):
         self.take_damage(projectile.damage)
+        overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
+        point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
+        self.get_rect_colliding
         if self.health <= 0:
             self.kill_instance_safe()
-    
+            ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
+        else:
+            ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
+
     def take_damage(self, damage : float):
         core_object.log(f"Basic enemy took damage : {damage}")
         self.health -= damage
-    
     
     def fire_homing_projectile(self) -> HomingProjectile:
         return HomingProjectile.spawn(self.position + pygame.Vector2(0, 30), pygame.Vector2(0, 5), None, None, 0,
@@ -220,8 +226,14 @@ class EliteEnemy(BaseNormalEnemy):
 
     def when_hit(self, projectile : BaseProjectile):
         self.take_damage(projectile.damage)
+        overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
+        point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
+        self.get_rect_colliding
         if self.health <= 0:
             self.kill_instance_safe()
+            ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
+        else:
+            ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
     
     def take_damage(self, damage : float):
         core_object.log(f"Elite enemy took damage : {damage}")
@@ -321,8 +333,14 @@ class GunnerEnemy(BaseNormalEnemy):
 
     def when_hit(self, projectile : BaseProjectile):
         self.take_damage(projectile.damage)
+        overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
+        point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
+        self.get_rect_colliding
         if self.health <= 0:
             self.kill_instance_safe()
+            ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
+        else:
+            ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
     
     def take_damage(self, damage : float):
         core_object.log(f"Gunner enemy took damage : {damage}")

@@ -245,7 +245,7 @@ class ShopGameState(NormalGameState):
         self.finished_wave : int = finished_wave
         self.control_script : ShopControlScript = ShopControlScript()
         self.candidates : dict["UpgradeType", float|int] = self.pick_candidates()
-        self.control_script.initialize(self.game.game_timer.get_time, self.candidates, self.prev.player)
+        self.control_script.initialize(self.game.game_timer.get_time, self.candidates, self.prev.player, self)
         self.game.alert_player("Shop entered!")
 
     def pick_candidates(self, count : int = 3) -> dict["UpgradeType", float|int]:
@@ -322,17 +322,17 @@ class ShopGameState(NormalGameState):
     def main_logic(self, delta : float):
         Sprite.update_all_sprites(delta)
         Sprite.update_all_registered_classes(delta)
-        result = self.control_script.process_frame(delta)
+        self.control_script.process_frame(delta)
         if self.control_script.is_over:
-            self.apply_upgrade(result)
             self.transition_to_main()
     
     def transition_to_main(self):
         self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1)
 
 class ShopControlScript(CoroutineScript):
-    def initialize(self, time_source : TimeSource, upgrades : dict["UpgradeType", float|int], player : "Player"):
-        return super().initialize(time_source, upgrades, player)
+    def initialize(self, time_source : TimeSource, upgrades : dict["UpgradeType", float|int], player : "Player",
+                   game_state : ShopGameState):
+        return super().initialize(time_source, upgrades, player, game_state)
     
     def type_hints(self):
         self.coro_attributes = []
@@ -393,7 +393,8 @@ class ShopControlScript(CoroutineScript):
 
     
     @staticmethod
-    def corou(time_source : TimeSource, upgrades : dict["UpgradeType", float|int], player : "Player") -> Generator[None, float, "UpgradeType"]:
+    def corou(time_source : TimeSource, upgrades : dict["UpgradeType", float|int], player : "Player",
+              game_state : ShopGameState) -> Generator[None, float, "UpgradeType"]:
         screen_size = core_object.main_display.get_size()
         screen_sizex, screen_sizey = screen_size
         centerx, centery = screen_sizex // 2, screen_sizey // 2
@@ -427,7 +428,7 @@ class ShopControlScript(CoroutineScript):
                 card.when_not_picked()
         picked_card.when_picked()
         picked_upgrade_type : UpgradeType = ([k for k in card_dict if card_dict[k] == picked_card])[0]
-
+        game_state.apply_upgrade(picked_upgrade_type)
         while cards:
             to_remove.clear()
             for card in cards:

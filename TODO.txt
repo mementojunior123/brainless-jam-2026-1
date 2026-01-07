@@ -5,28 +5,25 @@ You also get major upgrades right before the final boss
 
 
 --Necessary-- (Things i have to do now)
--Add basic informations to the menu (high-score, controls)
 -Implement boss waves
     (Reflectors friendly/enemy?)
 -Add feedback for when secondary fire is ready
--Add a visual for player health
--Add feedback for hits
 
 --High-- (Things I need to do before the end of the jam)
 -Implement proper enemy entries
--Add an animation for basic enemies
 -Add a mechanic that allows the player to dodge
 -Balance the game more
 -Add some music
 -Add a few sound effects
 -Implement destroyable projectiles
 -Add more upgrades
-
+-Add basic informations to the menu (high-score, controls)
 
 --Medium-- (Things I will add if I have time to spare)
 -Improve the player sprites/animation
 -Improve background sprite
 -Improve enemy sprite
+-Add an animation for basic enemies
 -Improve the menu
 -Add defensive upgrades
 -Add a way to see how much health enemies have

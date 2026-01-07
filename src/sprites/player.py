@@ -10,7 +10,7 @@ from src.sprites.projectiles import NormalProjectile, BaseProjectile, HomingProj
 import src.sprites.enemy
 from src.sprites.enemy import BaseEnemy, BaseNormalEnemy
 from enum import Enum
-
+from framework.utils.ui.ui_sprite import UiSprite
 
 class AlternateFireTypes(Enum):
     LAZER = 0
@@ -67,6 +67,9 @@ class Player(Sprite):
             load_alpha_to_colorkey(f"assets/graphics/player/player-{i}.png", (0, 255, 0)), 2) 
             for i in range(8)
     }
+    heart_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/player/heart2.png", (0, 255, 0))
+    empty_heart_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/player/empty_heart4.png", (0, 255, 0))
+
     ACCEL_SPEED : float = 3.0
     FRICTION : float = 0.3
     MIN_VELOCITY : float = 0.1
@@ -91,6 +94,8 @@ class Player(Sprite):
         self.upgrades : Upgrades
         self.invuln_timer : Timer
         self.invincible : bool
+
+        self.ui_hearts : list[UiSprite]
         Player.inactive_elements.append(self)
     
     @staticmethod
@@ -142,6 +147,8 @@ class Player(Sprite):
         element.invuln_timer = Timer(0.6, core_object.game.game_timer.get_time)
         element.invuln_timer.start_time -= 0.6
         element.invincible = False
+        element.ui_hearts = []
+        element.update_hearts()
 
         cls.unpool(element)
         return element
@@ -155,6 +162,7 @@ class Player(Sprite):
         self.update_movement(delta)
         self.check_input()
         self.check_collision()
+        self.update_hearts()
 
     def update_movement(self, delta : float):
         accel = self.calculate_acceleration()
@@ -258,6 +266,31 @@ class Player(Sprite):
         for proj in colliding_projectiles:
             self.take_damage(proj.damage)
             proj.kill_instance()
+    
+    def update_hearts(self):
+        ui_heart_count : int = len(self.ui_hearts)
+        ui_desync_diff : int = ui_heart_count - self.max_hp
+        if ui_desync_diff == 0:
+            pass
+        elif ui_desync_diff > 0:
+            for _ in range(ui_desync_diff):
+                to_remove = self.ui_hearts.pop(-1)
+                core_object.main_ui.remove(to_remove)
+        else:
+            for _ in range(abs(ui_desync_diff)):
+                GAP : int = 10
+                top : int = 10
+                prev_left : int = self.ui_hearts[-1].rect.left if self.ui_hearts else Player.display_size[0] - 10
+                new_sprite = UiSprite(self.heart_image, self.heart_image.get_rect(topright=(prev_left - GAP, top)),
+                                               -1, 'ui_heart', colorkey=(0, 255, 0))
+                self.ui_hearts.append(new_sprite)
+                core_object.main_ui.add(new_sprite)
+        
+        colored_heart_count : int = self.current_hp
+        for heart in self.ui_hearts:
+            heart.surf = Player.heart_image if colored_heart_count > 0 else Player.empty_heart_image
+            colored_heart_count -= 1
+        
 
     def clean_instance(self):
         super().clean_instance()
@@ -276,6 +309,7 @@ class Player(Sprite):
 
         self.invuln_timer = None
         self.invincible = None
+        self.ui_hearts = None
 
 class PlayerAnimationScript(CoroutineScript):
     def initialize(self, time_source : TimeSource, player : Player, cycle_time : float):

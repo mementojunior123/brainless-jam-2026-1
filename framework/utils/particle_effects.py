@@ -114,7 +114,7 @@ class Particle(Sprite):
             self.anim_track = None
         
         Particle.unpool(self)
-        self.rect.center = self.pivot.position
+        self.rect.center = self.pivot.position if self.pivot else self._position
         self.current_camera = core_object.game.main_camera
     
     def update(self, delta : float):
@@ -188,8 +188,10 @@ class ParticleEffect:
         self._zombie : bool = False
     
     @classmethod
-    def load_effect(cls, name : str, persistance : bool = False, dynamic_origin : bool = False):
-        if name not in cls.effects_data: return None
+    def load_effect(cls, name : str, persistance : bool = False, dynamic_origin : bool = False) -> "ParticleEffect":
+        if name not in cls.effects_data:
+            core_object.log(f"Particle effect '{name}' does not exist")
+            return None
         effect_data : EffectData = cls.effects_data[name]
         effect_type : str = effect_data['type']
         if effect_type is None:
@@ -346,9 +348,26 @@ test_effect2 : EffectData = {'offset_x' : [0, 0], 'offset_y' : [0, 0], 'velocity
             'accel_x' : [0,0], 'accel_y' : [0.0,0.0], 'drag' : [0, 0],
             'init_spawn_count' : 1, 'cooldown' : 0.05, 'target_spawn_count' : 35, 'lifetime' : [5,5], 'part_per_wave' : 1,
             'main_texture' : Particle.test_image, 'alt_textures' : None, "animation" : None,
-            'update_method' : 'spiral', 'destroy_offscreen' : False, 'copy_surface' : False, 'type' : None}
+            'update_method' : 'spiral', 'destroy_offscreen' : False, 'copy_surface' : False, 'type' : None
+}
 
-ParticleEffect.effects_data = {'test' : test_effect, 'test2' : test_effect2}
+enemy_damaged : EffectData = {'offset_x' : [-8, 8], 'offset_y' : [0, 8], 'velocity_x' : [0,0], 'velocity_y' : [-6.0,-6.0], 'angle' : [210, 330], 'speed' : [8, 8],
+            'accel_x' : [0,0], 'accel_y' : [0.12,0.15], 'drag' : [0, 0],
+            'init_spawn_count' : 3, 'cooldown' : 0.20, 'target_spawn_count' : 3, 'lifetime' : [5,5], 'part_per_wave' : 3,
+            'main_texture' : Particle.test_image, 'alt_textures' : None, "animation" : Animation.get_animation('enemy_hit_particle_alpha_gradient'),
+            'update_method' : 'simulated', 'destroy_offscreen' : True, 'copy_surface' : True, 'type' : None
+}
+
+enemy_killed : EffectData = {'offset_x' : [-8, 8], 'offset_y' : [-8, 8], 'velocity_x' : [0,0], 'velocity_y' : [-3.0,-3.0], 'angle' : [0, 360], 'speed' : [5, 5],
+            'accel_x' : [0,0], 'accel_y' : [0.12,0.15], 'drag' : [0, 0],
+            'init_spawn_count' : 8, 'cooldown' : 0.20, 'target_spawn_count' : 8, 'lifetime' : [5,5], 'part_per_wave' : 8,
+            'main_texture' : Particle.test_image, 'alt_textures' : None, "animation" : Animation.get_animation('enemy_killed_particle_alpha_gradient'),
+            'update_method' : 'simulated', 'destroy_offscreen' : True, 'copy_surface' : True, 'type' : None
+}
+
+
+ParticleEffect.effects_data = {'test' : test_effect, 'test2' : test_effect2, 'enemy_damaged' : enemy_damaged,
+                               'enemy_killed' : enemy_killed}
 
 def runtime_imports():
     global core_object

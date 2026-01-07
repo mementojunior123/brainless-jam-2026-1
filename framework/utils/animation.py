@@ -1,12 +1,10 @@
 import json
 import pygame
-from framework.utils.helpers import Task
+from framework.utils.helpers import Task, ColorType
 from framework.utils.my_timer import Timer
 import framework.utils.interpolation as interpolation
 import framework.utils.tween_module as TweenModule
 from typing import Any, Callable, Union
-
-ColorType = Union[list[int], tuple[int, int, int], pygame.Color]
 
 def is_rect_side(name : str) -> bool:
     return name in ['left', 'right', 'top', 'bottom', 'x', 'y', 'centerx', 'centery']
@@ -213,6 +211,8 @@ class AnimationInstruction:
             "rotate_to_over_time" : RotateToOverTimeInstruction,
             "image_gradient" : ImageGradientInstruction,
             "tween_property" : TweenPropertyInstruction,
+            "set_alpha" : SetAlphaInstruction,
+            "alpha_gradient" : AlphaGradientInstruction
         }
         instruction_type : str = data['type']
         if instruction_type in anim_conversion_dict:
@@ -601,6 +601,49 @@ class TweenPropertyInstruction(AnimationInstruction):
         if tween.has_finished:
             self.has_ended = True
 
+class SetAlphaInstruction(AnimationInstruction):
+    def __init__(self, data):
+        super().__init__(data)
+        self.target_alpha : float = data['target']
+    
+    def execute(self, track: AnimationTrack, current_index : int|None = None):
+        self.has_started = True
+        track.target.image.set_alpha(self.target_alpha)
+        self.has_ended = True
+        return
+
+class AlphaGradientInstruction(AnimationInstruction):
+    def __init__(self, data):
+        super().__init__(data)
+        self.target_alpha : float = data['target']
+        self.time : float = data['time']
+        self.easing_style : Callable[[float], float]
+        easing_style : str|Callable[[float], float] = data['easing_style']
+        if type(easing_style) == str: 
+            self.easing_style = getattr(interpolation, easing_style)
+        else:
+            self.easing_style = easing_style
+    
+    def execute(self, track: AnimationTrack, current_index : int|None = None):
+        if not self.has_started:
+            self.has_started = True
+            track.tasks.append(self)
+            self.timer = Timer(self.time, track.time_source, track.timer_factor)
+            start_alpha : int = track.target.image.get_alpha()
+            if start_alpha is None: start_alpha = 255
+            self.start_value = start_alpha
+            return
+        
+        
+        alpha = self.timer.get_time() / self.timer.duration
+        if alpha > 1: 
+            alpha = 1
+            self.has_ended = True
+        
+        new_alpha : float = int(interpolation.lerp(self.start_value, self.target_alpha, self.easing_style(alpha)))
+
+        
+        track.target.image.set_alpha(new_alpha)
 
 TEMPLATES = [
     {"type" : "move_by", "offset" : (0,0)},
@@ -623,8 +666,8 @@ TEMPLATES = [
     {"type" : "image_gradient", "source" : "source_name", "target_index" : 0, "time" : 0, "easing_style" : interpolation.linear, 'dynamic_anchor' : 'rect_attr/none',
     'colorkey' : 'color or none'},
     {"type" : "tween_property", "property" : "", "goal" : 0, "time" : 0, "easing_style" : interpolation.linear},
-    #{"type" : "set_alpha", "target" : 0}, set_alpha and alpha_gradient are currently unspported with no plan of being brought back
-    #{"type" : "alpha_gradient", "target" : 0, "time" : 0, "easing_style" : interpolation.linear},
+    {"type" : "set_alpha", "target" : 0},
+    {"type" : "alpha_gradient", "target" : 0, "time" : 0, "easing_style" : interpolation.linear},
              ]
 
 
@@ -649,9 +692,19 @@ test_anim = [
     {"type" : "tween_property", "property" : "position", "goal" : [100, 100], "time" : 3, "easing_style" : interpolation.linear},
     ]
 
+enemy_hit_particle_alpha_gradient = [
+    {"type" : "wait", "time" : 0.15},
+    {"type" : "alpha_gradient", "target" : 0, "time" : 0.5, "easing_style" : interpolation.linear},
+]
+
+enemy_killed_particle_alpha_gradient = [
+    {"type" : "wait", "time" : 0.2},
+    {"type" : "alpha_gradient", "target" : 0, "time" : 0.8, "easing_style" : interpolation.linear},
+]
 
 class Animation:
-    ANIM_DATA = {"test" : test_anim}
+    ANIM_DATA = {"test" : test_anim, 'enemy_hit_particle_alpha_gradient' : enemy_hit_particle_alpha_gradient,
+                 'enemy_killed_particle_alpha_gradient' : enemy_killed_particle_alpha_gradient}
 
     @classmethod
     def get_animation(cls, name):
