@@ -96,6 +96,7 @@ class Player(Sprite):
         self.invincible : bool
 
         self.ui_hearts : list[UiSprite]
+        self.ui_alternate_fire_sprite : UiSprite
         Player.inactive_elements.append(self)
     
     @staticmethod
@@ -149,6 +150,9 @@ class Player(Sprite):
         element.invincible = False
         element.ui_hearts = []
         element.update_hearts()
+        element.ui_alternate_fire_sprite = element.create_alternate_fire_visual()
+        element.update_alternate_fire_visual()
+        core_object.main_ui.add(element.ui_alternate_fire_sprite)
 
         cls.unpool(element)
         return element
@@ -163,6 +167,7 @@ class Player(Sprite):
         self.check_input()
         self.check_collision()
         self.update_hearts()
+        self.update_alternate_fire_visual()
 
     def update_movement(self, delta : float):
         accel = self.calculate_acceleration()
@@ -181,13 +186,14 @@ class Player(Sprite):
         self.restrict_to_screen()
     
     def restrict_to_screen(self):
-        if self.rect.right > Player.display_size[0]:
-            self.rect.right = Player.display_size[0]
+        MARGIN : int = 25
+        if self.rect.right > Player.display_size[0] - MARGIN:
+            self.rect.right = Player.display_size[0] - MARGIN
             if self.velocity.x > 0: self.velocity.x = 0
         if self.rect.bottom > Player.display_size[1]:
             self.rect.bottom = Player.display_size[1]
-        if self.rect.left < 0:
-            self.rect.left = 0
+        if self.rect.left < MARGIN:
+            self.rect.left = MARGIN
             if self.velocity.x < 0: self.velocity.x = 0
         if self.rect.top < 0:
             self.rect.top = 0
@@ -290,6 +296,24 @@ class Player(Sprite):
         for heart in self.ui_hearts:
             heart.surf = Player.heart_image if colored_heart_count > 0 else Player.empty_heart_image
             colored_heart_count -= 1
+    
+    def create_alternate_fire_visual(self) -> UiSprite:
+        BAR_DIMENSIONS : tuple[int, int] = (2, 50)
+        bar_image : pygame.Surface = pygame.Surface(BAR_DIMENSIONS)
+        bar_image.fill((0, 255, 0))
+        bar_image.set_colorkey((0, 255, 0))
+        new_sprite : UiSprite = UiSprite(bar_image, bar_image.get_rect(midleft = self.rect.midright + pygame.Vector2(10, 0)),
+                                         -1, 'alternate_fire_cooldown')
+        return new_sprite
+    
+    def update_alternate_fire_visual(self):
+        self.ui_alternate_fire_sprite.surf.fill((0, 255, 0))
+        bar_width : int = self.ui_alternate_fire_sprite.rect.width
+        max_height : int = self.ui_alternate_fire_sprite.rect.height
+        ready_percentage : float = self.alternate_fire_cooldown_timer.get_time() / self.alternate_fire_cooldown_timer.duration
+        bar_height : int = int(pygame.math.lerp(max_height, 0, ready_percentage))
+        pygame.draw.rect(self.ui_alternate_fire_sprite.surf, 'White', (0, max_height - bar_height, bar_width, bar_height))
+        self.ui_alternate_fire_sprite.rect.midleft = self.rect.midright + pygame.Vector2(10, 0)
         
 
     def clean_instance(self):
@@ -310,6 +334,7 @@ class Player(Sprite):
         self.invuln_timer = None
         self.invincible = None
         self.ui_hearts = None
+        self.ui_alternate_fire_sprite = None
 
 class PlayerAnimationScript(CoroutineScript):
     def initialize(self, time_source : TimeSource, player : Player, cycle_time : float):
