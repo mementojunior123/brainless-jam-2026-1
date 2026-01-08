@@ -9,7 +9,6 @@ You also get major upgrades right before the final boss
     (Reflectors friendly/enemy?)
 
 --High-- (Things I need to do before the end of the jam)
--Add basic informations to the menu (high-score, controls)
 -Add a sound effect for enemies shooting
 -Game over sequence
 -Add a separate card design for major upgrades

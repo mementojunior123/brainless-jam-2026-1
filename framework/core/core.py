@@ -71,6 +71,7 @@ class Core:
         self.fps_sprite : TextSprite = TextSprite(pygame.Vector2(15 + 63 - 63, 10), 'topleft', 0, 'FPS : 0', 'fps_sprite', 
                             text_settings=(Menu.font_40, 'White', False), text_stroke_settings=('Black', 2),
                             text_alingment=(9999, 5), colorkey=(255, 0,0))
+        self.fps_sprite.visible = False
         self.debug_sprite : TextSprite = TextSprite(pygame.Vector2(15, 200), 'midright', 0, '', 'debug_sprite', 
                             text_settings=(Menu.font_40, 'White', False), text_stroke_settings=('Black', 2),
                             text_alingment=(9999, 5), colorkey=(255, 0,0), zindex=999)
@@ -133,9 +134,7 @@ class Core:
         self.main_ui.add(self.debug_sprite)
     
     def detect_game_over(self, event : pygame.Event):
-        if event.type == pygame.KEYDOWN: 
-            if event.key == pygame.K_ESCAPE: 
-                self.end_game(None)
+        pass
     
     def end_game(self, event : pygame.Event = None):
         self.game.end_game()
@@ -155,14 +154,19 @@ class Core:
         elif method == 2:
             platform.EventTarget.addEventListener(platform.window, "blur", self.stop_things)
             platform.EventTarget.addEventListener(platform.window, "focus", self.continue_things)
+            platform.EventTarget.addEventListener(platform.window, "beforeunload", self.save_game)
         self.storage.set_web(self.networker.NETWORK_LOCALSTORAGE_KEY, "")
+    
+    def save_game(self):
+        self.storage.save(self.is_web())
+        self.settings.save(self.is_web())
 
 
     def init(self, main_display : pygame.Surface):
         self.main_display = main_display
     
     def close_game(self, event : pygame.Event):
-        self.settings.save()
+        self.save_game()
         pygame.quit()
         exit()
     
@@ -303,7 +307,8 @@ class Core:
         return 60 / average
 
     def update_fps_sprite(self):
-        self.fps_sprite.text = f'FPS : {self.get_fps():0.0f}'
+        if self.fps_sprite.visible:
+            self.fps_sprite.text = f'FPS : {self.get_fps():0.0f}'
     
     def run_js_code(self, code : str) -> Any:
         if not self.is_web():

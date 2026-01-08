@@ -65,6 +65,8 @@ class Menu(BaseMenu):
     def prepare_entry(self, stage = 1):
         super().prepare_entry(stage)
         self.menu_theme.play()
+        high_score_sprite : TextSprite = self.get_sprite_by_name(1, 'highscore_text')
+        high_score_sprite.text = f'High score : {core_object.storage.high_score}'
     
     def init(self):
         """Initialises a menu object. Must be ran after runtime imports."""
@@ -81,18 +83,16 @@ class Menu(BaseMenu):
         [BaseUiElements.new_text_sprite('Game Title', (Menu.font_60, 'Black', False), 0, 'midtop', (centerx, 50)),
         BaseUiElements.new_button('BlueButton', 'Play', 1, 'midbottom', (centerx, window_size[1] - 15), (0.5, 1.4), 
         {'name' : 'play_button'}, (Menu.font_40, 'Black', False)),
-        BaseUiElements.new_button('BlueButton', 'Test', 1, 'bottomright', (wx - 15, window_size[1] - 15), (0.5, 1.4), 
-        {'name' : 'test_button'}, (Menu.font_40, 'Black', False))], #stage 1
-
-        [BaseUiElements.new_button('BlueButton', 'Prev', 1, 'bottomleft', (20, window_size[1] - 25), (0.4, 1.0), 
-        {'name' : 'prev_button'}, (Menu.font_40, 'Black', False)),
-        BaseUiElements.new_button('BlueButton', 'Next', 2, 'bottomright', (wx - 20, window_size[1] - 25), (0.4, 1.0), 
-        {'name' : 'next_button'}, (Menu.font_40, 'Black', False)),
-        BaseUiElements.new_button('BlueButton', 'Back', 3, 'topleft', (15, 15), (0.4, 1.0), 
-        {'name' : 'back_button'}, (Menu.font_40, 'Black', False)),]
+        BaseUiElements.new_text_sprite('A/D or arrow keys to move', (Menu.font_50, 'Black', False), 0, 'midleft', (15, centery - 75)),
+        BaseUiElements.new_text_sprite('SPACE to shoot', (Menu.font_50, 'Black', False), 0, 'midleft', (15, centery - 25)),
+        BaseUiElements.new_text_sprite('F for a special attack', (Menu.font_50, 'Black', False), 0, 'midleft', (15, centery + 25)),
+        BaseUiElements.new_text_sprite('SHIFT to dash', (Menu.font_50, 'Black', False), 0, 'midleft', (15, centery + 75)),
+        TextSprite(pygame.Vector2(window_size[0] - 15, centery), 'midright', 0,
+        f'High score : {core_object.storage.high_score}', name='highscore_text', text_settings=(Menu.font_50, 'Black', False))
+        ]
         ]
         self.bg_color = (94, 129, 162)
-        self.add_connections()   
+        self.add_connections()
 
     def enter_stage2(self):
         self.stage = 2

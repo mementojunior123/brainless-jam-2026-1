@@ -252,13 +252,16 @@ class MainGameState(NormalGameState):
         
 
     def transition_to_gameover(self):
-        self.game.state = GameOverGameState(self.game)
+        self.game.state = GameOverGameState(self.game, prev_state=self)
     
     def transition_to_shop(self):
         self.game.state = ShopGameState(self.game, self.wave_number, self)
     
 
     def cleanup(self):
+        if self.score > core_object.storage.high_score:
+            core_object.storage.high_score = self.score
+            core_object.storage.save(core_object.is_web())
         super().cleanup()
         src.sprites.player.remove_connections()
         core_object.bg_manager.stop_all_music()
@@ -488,7 +491,6 @@ class ShopGameState(NormalGameState):
         self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1) if self.finished_wave < 10 else GameOverGameState(self.game, "You win!")
     
     def cleanup(self):
-        super().cleanup()
         self.prev.cleanup()
 
 class ShopControlScript(CoroutineScript):
@@ -687,20 +689,21 @@ class ShopControlScript(CoroutineScript):
         return picked_upgrade_type
 
 class GameOverGameState(GameState):
-    def __init__(self, game_object : "Game", text = "Game over!"):
+    def __init__(self, game_object : "Game", text = "Game over!", prev_state : GameState|None = None):
         self.game : Game = game_object
         self.control_script : GameOverControlScript = GameOverControlScript()
         self.control_script.initialize(self.game.game_timer.get_time)
         self.game.alert_player(text)
         core_object.bg_manager.stop_all_music()
-    
+        self.prev = prev_state
+
     def main_logic(self, delta : float):
         self.control_script.process_frame(delta)
         if self.control_script.is_over:
             pygame.event.post(pygame.Event(core_object.END_GAME, {}))
 
     def cleanup(self):
-        pass
+        if self.prev: self.prev.cleanup()
 
 class GameOverControlScript(CoroutineScript):
     def initialize(self, time_source : TimeSource):
