@@ -28,6 +28,7 @@ You also get major upgrades right before the final boss
 -Improve a few sound effects
 -Add some music
 -Volume options
+-Add a confirmation for resetting high score
 
 --Low-- (Things I won't add in the game jam due to time constraints)
 -Settings
