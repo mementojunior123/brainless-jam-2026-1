@@ -178,10 +178,10 @@ WAVE_DATA : dict[int, WaveData] = {
 }
 
 class MainGameState(NormalGameState):
-    main_theme : pygame.Sound = pygame.Sound("assets/audio/music/theme2_trimmed.ogg")
+    main_theme : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/music/theme2_trimmed.ogg")
     main_theme.set_volume(0.3)
 
-    boss_theme : pygame.Sound = pygame.Sound("assets/audio/music/theme1.ogg")
+    boss_theme : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/music/theme1.ogg")
     boss_theme.set_volume(0.2)
 
     def __init__(self, game_object : "Game", prev_main_state : Union["MainGameState", None] = None, wave_num : int = 1):
@@ -449,7 +449,7 @@ class ShopGameState(NormalGameState):
             self.transition_to_main()
     
     def transition_to_main(self):
-        self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1)
+        self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1) if self.finished_wave < 10 else GameOverGameState(self.game, "You win!")
     
     def cleanup(self):
         super().cleanup()
@@ -586,11 +586,11 @@ class ShopControlScript(CoroutineScript):
         return picked_upgrade_type
 
 class GameOverGameState(GameState):
-    def __init__(self, game_object : "Game"):
+    def __init__(self, game_object : "Game", text = "Game over!"):
         self.game : Game = game_object
         self.control_script : GameOverControlScript = GameOverControlScript()
         self.control_script.initialize(self.game.game_timer.get_time)
-        self.game.alert_player("Game over!")
+        self.game.alert_player(text)
         core_object.bg_manager.stop_all_music()
     
     def main_logic(self, delta : float):

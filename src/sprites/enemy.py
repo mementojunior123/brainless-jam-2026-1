@@ -21,9 +21,9 @@ class BaseEnemy(Sprite):
         180)
     default_image2 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/enemy/alien.png", (0, 255, 0))
     display_size : tuple[int, int] = core_object.main_display.get_size()
-    enemy_hit_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/enemy_hit.ogg")
+    enemy_hit_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/enemy_hit.ogg")
     enemy_hit_sfx.set_volume(0.41)
-    enemy_killed_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/enemy_killed2.ogg")
+    enemy_killed_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/enemy_killed2.ogg")
     enemy_killed_sfx.set_volume(0.50)
     def __init__(self) -> None:
         super().__init__()

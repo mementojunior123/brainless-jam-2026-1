@@ -53,7 +53,7 @@ class Menu(BaseMenu):
     font_70 = pygame.font.Font(r'assets/fonts/Pixeltype.ttf', 70)
     font_150 = pygame.font.Font(r'assets/fonts/Pixeltype.ttf', 150)
 
-    menu_theme : pygame.Sound = pygame.Sound("assets/audio/music/menu1.ogg")
+    menu_theme : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/music/menu1.ogg")
     menu_theme.set_volume(0.3)
     @staticmethod
     def _get_core_object():

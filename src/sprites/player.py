@@ -69,15 +69,15 @@ class Player(Sprite):
     }
     heart_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/player/heart2.png", (0, 255, 0))
     empty_heart_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/player/empty_heart4.png", (0, 255, 0))
-    hit_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/player_hit2.ogg")
+    hit_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/player_hit2.ogg")
     hit_sfx.set_volume(0.50)
-    normal_shot_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/normal_shot3.ogg")
+    normal_shot_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/normal_shot3.ogg")
     normal_shot_sfx.set_volume(0.5)
 
-    lazer_shot_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/lazer.ogg")
+    lazer_shot_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/lazer.ogg")
     lazer_shot_sfx.set_volume(0.4)
 
-    shotgun_shot_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/shotgun_shot.ogg")
+    shotgun_shot_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/shotgun_shot.ogg")
     shotgun_shot_sfx.set_volume(0.7)
 
     ACCEL_SPEED : float = 3.0
@@ -91,7 +91,7 @@ class Player(Sprite):
     DASH_COOLDOWN : float = 3
     DASH_DURATION : float = 0.3
     DASH_INVULN_TIME : float = 0.10
-    
+
     display_size : tuple[int, int] = core_object.main_display.get_size()
     def __init__(self) -> None:
         super().__init__()
