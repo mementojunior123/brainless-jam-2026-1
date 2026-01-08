@@ -489,7 +489,7 @@ class ShopGameState(NormalGameState):
             self.transition_to_main()
     
     def transition_to_main(self):
-        self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1) if self.finished_wave < 10 else GameOverGameState(self.game, "You win!")
+        self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1) if self.finished_wave < 10 else GameOverGameState(self.game, "You win!", self.prev)
     
     def cleanup(self):
         self.prev.cleanup()
