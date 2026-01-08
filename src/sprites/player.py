@@ -83,10 +83,15 @@ class Player(Sprite):
     ACCEL_SPEED : float = 3.0
     FRICTION : float = 0.3
     MIN_VELOCITY : float = 0.1
-    MAX_VELOCITY : float = 9
+    MAX_VELOCITY : float = 15
     BASE_SHOT_FIRERATE : float = 3
     BASE_ALTERNATE_SHOT_FIRERATE : float = 0.25
     BASE_HEALTH : int = 3
+
+    DASH_COOLDOWN : float = 3
+    DASH_DURATION : float = 0.3
+    DASH_INVULN_TIME : float = 0.10
+    
     display_size : tuple[int, int] = core_object.main_display.get_size()
     def __init__(self) -> None:
         super().__init__()
@@ -107,6 +112,10 @@ class Player(Sprite):
 
         self.ui_hearts : list[UiSprite]
         self.ui_alternate_fire_sprite : UiSprite
+
+        self.dash_timer : Timer
+        self.dash_direction : int|None
+
         Player.inactive_elements.append(self)
     
     @staticmethod
@@ -164,6 +173,10 @@ class Player(Sprite):
         element.update_alternate_fire_visual()
         core_object.main_ui.add(element.ui_alternate_fire_sprite)
 
+        element.dash_timer = Timer(Player.DASH_DURATION, core_object.game.game_timer.get_time)
+        element.dash_timer.start_time -= Player.DASH_COOLDOWN
+        element.dash_direction = None
+
         cls.unpool(element)
         return element
 
@@ -209,6 +222,8 @@ class Player(Sprite):
             self.rect.top = 0
 
     def calculate_acceleration(self) -> pygame.Vector2:
+        if not self.dash_timer.isover():
+            return pygame.Vector2(self.dash_direction * 7, 0)
         pressed_keys = pygame.key.get_pressed()
         accel_total : pygame.Vector2 = pygame.Vector2(0, 0)
         if pressed_keys[pygame.K_a] or pressed_keys[pygame.K_LEFT]:
@@ -223,6 +238,21 @@ class Player(Sprite):
         if pygame.key.get_pressed()[pygame.K_f]:
             if not isinstance(core_object.game.state, core_object.game.STATES.ShopGameState):
                 self.perform_alternate_fire(ignore_cooldown=False)
+    
+    def attempt_dash(self):
+        if self.dash_timer.get_time() <= Player.DASH_COOLDOWN:
+            return
+        dash_direction : int = 0
+        pressed_keys = pygame.key.get_pressed()
+        if pressed_keys[pygame.K_a] or pressed_keys[pygame.K_LEFT]:
+            dash_direction -= 1
+        if pressed_keys[pygame.K_d] or pressed_keys[pygame.K_RIGHT]:
+            dash_direction += 1
+        if dash_direction == 0:
+            return
+        self.dash_direction = dash_direction
+        self.dash_timer.restart()
+        self.velocity += pygame.Vector2(dash_direction * 6, 0)
     
     def shoot(self, ignore_cooldown : bool = False) -> BaseProjectile|None:
         if not (self.shot_cooldown_timer.isover() or ignore_cooldown) or not self.can_shoot:
@@ -269,7 +299,10 @@ class Player(Sprite):
         return proj_list
     
     def take_damage(self, damage : float):
-        if (not self.invuln_timer.isover()) or self.invincible or isinstance(core_object.game.state, core_object.game.STATES.ShopGameState):
+        if ((not self.invuln_timer.isover()) 
+            or self.invincible 
+            or isinstance(core_object.game.state, core_object.game.STATES.ShopGameState)
+            or (self.dash_timer.get_time() < Player.DASH_INVULN_TIME)):
             return
         core_object.log(f"Player took damage : {damage}")
         self.current_hp -= damage
@@ -283,6 +316,8 @@ class Player(Sprite):
             self.take_damage(1)
             if isinstance(enemy, BaseNormalEnemy):
                 enemy.kill_instance()
+        if self.dash_timer.get_time() < Player.DASH_INVULN_TIME:
+            return
         for proj in colliding_projectiles:
             self.take_damage(proj.damage)
             proj.kill_instance()
@@ -328,6 +363,16 @@ class Player(Sprite):
         bar_height : int = int(pygame.math.lerp(max_height, 0, ready_percentage))
         pygame.draw.rect(self.ui_alternate_fire_sprite.surf, 'White', (0, max_height - bar_height, bar_width, bar_height))
         self.ui_alternate_fire_sprite.rect.midleft = self.rect.midright + pygame.Vector2(10, 0)
+    
+    def handle_key_event(self, event : pygame.Event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LSHIFT:
+                self.attempt_dash()
+
+    @classmethod
+    def receive_key_event(cls, event : pygame.Event):
+        for elem in cls.active_elements:
+            elem.handle_key_event(event)
         
 
     def clean_instance(self):
@@ -349,6 +394,9 @@ class Player(Sprite):
         self.invincible = None
         self.ui_hearts = None
         self.ui_alternate_fire_sprite = None
+
+        self.dash_timer = None
+        self.dash_direction = None
 
 class PlayerAnimationScript(CoroutineScript):
     def initialize(self, time_source : TimeSource, player : Player, cycle_time : float):
@@ -377,6 +425,14 @@ class PlayerAnimationScript(CoroutineScript):
                 player.visible = (int(player.invuln_timer.get_time() / player.invuln_timer.duration * 3) % 2) != 0
             yield
 
+
+def make_connections():
+    core_object.event_manager.bind(pygame.KEYDOWN, Player.receive_key_event)
+    core_object.event_manager.bind(pygame.KEYUP, Player.receive_key_event)
+
+def remove_connections():
+    core_object.event_manager.unbind(pygame.KEYDOWN, Player.receive_key_event)
+    core_object.event_manager.unbind(pygame.KEYUP, Player.receive_key_event)
 
 for _ in range(1): Player()
 Sprite.register_class(Player)

@@ -194,6 +194,7 @@ class MainGameState(NormalGameState):
             self.screen_size = core_object.main_display.get_size()
             core_object.bg_manager.play(self.main_theme, 1.0)
             ShopControlScript.update_music_volume(1.0)
+            src.sprites.player.make_connections()
         else:
             self.player = prev_main_state.player
             self.screen_size = prev_main_state.screen_size
@@ -232,6 +233,7 @@ class MainGameState(NormalGameState):
 
     def cleanup(self):
         super().cleanup()
+        src.sprites.player.remove_connections()
         core_object.bg_manager.stop_all_music()
 
 
@@ -374,9 +376,9 @@ class ShopGameState(NormalGameState):
         candidates : dict[UpgradeType, float|int]
         if self.finished_wave % 5 != 0:
             candidates = {
-                'RegularDamageBonus' : 0.5,
-                'SpecialDamageMultipler' : 0.4,
-                'AllDamageMultiplier' : 0.2,
+                'RegularDamageBonus' : 0.4,
+                'SpecialDamageMultipler' : 0.3,
+                'AllDamageMultiplier' : 0.15,
 
                 'RegularFirerateMultiplier' : 0.2,
                 'SpecialFirerateMultiplier' : 0.2,
@@ -669,6 +671,7 @@ def runtime_imports():
     global BasicBoss, BaseBoss
     import src.sprites.bosses
     from src.sprites.bosses import BasicBoss, BaseBoss
+    src.sprites.bosses.runtime_imports()
 
 class NetworkTestGameState(NormalGameState):
     def __init__(self, game_object : 'Game'):

@@ -10,7 +10,7 @@ You also get major upgrades right before the final boss
 
 --High-- (Things I need to do before the end of the jam)
 -Implement proper enemy entries
--Add a defensive option for the player
+-Add visuals for the dash
 -Balance the game more
 -Implement destroyable projectiles
 -Add more upgrades
@@ -18,6 +18,7 @@ You also get major upgrades right before the final boss
 -Add a sound effect for enemies shooting
 -Game over sequence
 -Add a separate card design for major upgrades
+-Full heal when a boss is beaten?
 
 --Medium-- (Things I will add if I have time to spare)
 -Improve the player sprites/animation
@@ -32,6 +33,7 @@ You also get major upgrades right before the final boss
 -Improve visual on the upgrade cards
 -Improve a few sound effects
 -Add some music
+-Volume options
 
 --Low-- (Things I won't add in the game jam due to time constraints)
 -Settings
