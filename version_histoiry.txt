@@ -1,0 +1,2 @@
+Version J01 (07-01-2026, 21:40):
+    -The first fully playable version of the game
