@@ -17,6 +17,7 @@ You also get major upgrades right before the final boss
 -Add basic informations to the menu (high-score, controls)
 -Add a sound effect for enemies shooting
 -Game over sequence
+-Add a separate card design for major upgrades
 
 --Medium-- (Things I will add if I have time to spare)
 -Improve the player sprites/animation
