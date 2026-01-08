@@ -53,6 +53,7 @@ class BasicBoss(BaseBoss):
         self.control_script : BasicBossEntryScript
         self.health_bar : UiSprite
         self.max_hp : float
+        self.invincible : bool
         BasicBoss.inactive_elements.append(self)
 
     @classmethod
@@ -68,15 +69,17 @@ class BasicBoss(BaseBoss):
         element.zindex = 0
         element.current_camera = core_object.game.main_camera
 
-        element.control_script = BasicBossEntryScript()
-        element.control_script.initialize(core_object.game.game_timer.get_time, element)
-
         element.type = 'basic'
         element.max_hp = 50
         element.health = element.max_hp
         element.health_bar = element.create_healthbar_visual()
         element.update_healthbar_visual()
         core_object.main_ui.add(element.health_bar)
+        element.health_bar.visible = False
+        element.invincible = False
+
+        element.control_script = BasicBossEntryScript()
+        element.control_script.initialize(core_object.game.game_timer.get_time, element)
 
         cls.unpool(element)
         return element
@@ -118,17 +121,20 @@ class BasicBoss(BaseBoss):
         self.take_damage(projectile.damage)
         overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
         point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
-        self.get_rect_colliding
         if self.health <= 0:
             core_object.main_ui.remove(self.health_bar)
             self.kill_instance_safe()
             ParticleEffect.load_effect('boss_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
-        else:
+            core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
+        elif not self.invincible:
             ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
+            core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
 
     def take_damage(self, damage : float):
-        core_object.log(f"Basic enemy took damage : {damage}")
-        self.health -= damage
+        if not self.invincible:
+            core_object.log(f"Basic boss took damage : {damage:.2f}")
+            self.health -= damage
+            self.health_bar.visible = True
     
     def fire_homing_projectile(self) -> HomingProjectile:
         return HomingProjectile.spawn(self.position + pygame.Vector2(0, 30), pygame.Vector2(0, 5), None, None, 0,
@@ -142,6 +148,9 @@ class BasicBoss(BaseBoss):
     def clean_instance(self):
         super().clean_instance()
         self.control_script = None
+        self.invincible = None
+        self.max_hp = None
+        self.health_bar = None
 
 class BasicBossEntryScript(CoroutineScript):
     def initialize(self, time_source : TimeSource, unit : BasicBoss):
@@ -163,6 +172,7 @@ class BasicBossEntryScript(CoroutineScript):
         start_position : pygame.Vector2 = unit.position.copy()
         move_in_timer : Timer = Timer(2, time_source)
         delta = yield
+        unit.invincible = True
         if delta is None: delta = core_object.dt
         while not move_in_timer.isover():
             alpha : float = interpolation.smoothstep(move_in_timer.get_time() / move_in_timer.duration)
@@ -170,6 +180,7 @@ class BasicBossEntryScript(CoroutineScript):
             unit.position = new_pos
             delta = yield
         unit.position = target_position
+        unit.invincible = False
         return BasicBossBehaviorScript()
 
 class BasicBossBehaviorScript(CoroutineScript):

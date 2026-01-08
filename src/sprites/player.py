@@ -28,15 +28,15 @@ class AlternateFireBaseStatLine(TypedDict):
 
 alternate_fire_base_stats : dict[int, AlternateFireBaseStatLine] = {
     AlternateFireTypes.LAZER.value : {
-        'damage' : 4,
-        'firerate' : 0.6,
+        'damage' : 5,
+        'firerate' : 1.2,
         'name' : 'Lazer',
         'description' : 'a lazer type weapon'
     },
 
     AlternateFireTypes.SHOTGUN.value : {
-        'damage' : 2,
-        'firerate' : 0.6,
+        'damage' : 1.5,
+        'firerate' : 0.5,
         'name' : 'Shotgun',
         'description' : 'a shotgun type weapon'
     }
@@ -69,6 +69,16 @@ class Player(Sprite):
     }
     heart_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/player/heart2.png", (0, 255, 0))
     empty_heart_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/player/empty_heart4.png", (0, 255, 0))
+    hit_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/player_hit2.ogg")
+    hit_sfx.set_volume(0.50)
+    normal_shot_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/normal_shot3.ogg")
+    normal_shot_sfx.set_volume(0.5)
+
+    lazer_shot_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/lazer.ogg")
+    lazer_shot_sfx.set_volume(0.4)
+
+    shotgun_shot_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/shotgun_shot.ogg")
+    shotgun_shot_sfx.set_volume(0.7)
 
     ACCEL_SPEED : float = 3.0
     FRICTION : float = 0.3
@@ -221,6 +231,7 @@ class Player(Sprite):
         normal_damage : float = (1 + self.upgrades['RegularDamageBonus']) * self.upgrades['AllDamageMultiplier']
         normal_firerate : float = (Player.BASE_SHOT_FIRERATE * self.upgrades['RegularFirerateMultiplier']) * self.upgrades['AllFirerateMultiplier']
         self.shot_cooldown_timer.set_duration(1 / normal_firerate)
+        core_object.bg_manager.play_sfx(Player.normal_shot_sfx, 1.0)
         return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -10), None, None, 0,
                                        recolor_image(BaseProjectile.normal_image3, "White"), team=Teams.ALLIED,
                                        damage = normal_damage)
@@ -241,15 +252,17 @@ class Player(Sprite):
                 return None
     
     def fire_lazer(self, damage : int) -> NormalProjectile:
-        return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -13), None, None, 0,
+        core_object.bg_manager.play_sfx(Player.lazer_shot_sfx, 1.0)
+        return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -16), None, None, 0,
                                        recolor_image(BaseProjectile.normal_image3, "Purple"), team=Teams.ALLIED,
                                        damage=damage)
     
     def fire_shotgun(self, damage : int) -> list[NormalProjectile]:
+        core_object.bg_manager.play_sfx(Player.shotgun_shot_sfx, 1.0)
         proj_list : list[NormalProjectile] = []
         for angle in (-20, -10, 0, 10, 20):
             proj_list.append(
-                NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -13).rotate(angle),
+                NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -16).rotate(angle),
                         None, None, angle, recolor_image(BaseProjectile.normal_image4, "White"), team=Teams.ALLIED,
                         damage=damage)
             )
@@ -261,6 +274,7 @@ class Player(Sprite):
         core_object.log(f"Player took damage : {damage}")
         self.current_hp -= damage
         self.invuln_timer.restart()
+        core_object.bg_manager.play_sfx(Player.hit_sfx, 1.0)
 
     def check_collision(self):
         colliding_projectiles : list[BaseProjectile] = [elem for elem in self.get_all_colliding(BaseProjectile) if elem.team in (Teams.ENEMY, Teams.FFA)]
@@ -284,9 +298,9 @@ class Player(Sprite):
                 core_object.main_ui.remove(to_remove)
         else:
             for _ in range(abs(ui_desync_diff)):
-                GAP : int = 10
+                GAP : int = 5
                 top : int = 10
-                prev_left : int = self.ui_hearts[-1].rect.left if self.ui_hearts else Player.display_size[0] - 10
+                prev_left : int = self.ui_hearts[-1].rect.left if self.ui_hearts else Player.display_size[0] - 1
                 new_sprite = UiSprite(self.heart_image, self.heart_image.get_rect(topright=(prev_left - GAP, top)),
                                                -1, 'ui_heart', colorkey=(0, 255, 0))
                 self.ui_hearts.append(new_sprite)

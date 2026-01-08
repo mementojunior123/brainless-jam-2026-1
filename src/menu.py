@@ -53,12 +53,18 @@ class Menu(BaseMenu):
     font_70 = pygame.font.Font(r'assets/fonts/Pixeltype.ttf', 70)
     font_150 = pygame.font.Font(r'assets/fonts/Pixeltype.ttf', 150)
 
+    menu_theme : pygame.Sound = pygame.Sound("assets/audio/music/menu1.ogg")
+    menu_theme.set_volume(0.3)
     @staticmethod
     def _get_core_object():
         """Function that imports the core object at runtime."""
         global core_object
         from framework.core.core import core_object
         BaseMenu._get_core_object()
+    
+    def prepare_entry(self, stage = 1):
+        super().prepare_entry(stage)
+        self.menu_theme.play()
     
     def init(self):
         """Initialises a menu object. Must be ran after runtime imports."""
@@ -136,6 +142,7 @@ class Menu(BaseMenu):
         match self.stage:
             case 1:
                 if name == "play_button":
+                    self.menu_theme.stop()
                     pygame.event.post(pygame.Event(core_object.START_GAME, {'mode' : 'test'}))
                 if name == 'test_button':
                     self.goto_stage(2)

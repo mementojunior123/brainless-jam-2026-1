@@ -22,7 +22,9 @@ class BgManager:
     def play(self, track : pygame.mixer.Sound, volume, loops = -1, maxtime = 0, fade_ms = 0, sound_type : str|None = 'Music'):
         """Used for playing music."""
         channel = track.play(loops, maxtime, fade_ms)
-        channel.set_volume(volume * self.global_volume)
+        if volume < 1 or volume > 1:
+            channel.set_volume(volume * self.global_volume)
+            print('hello world')
         self.current[channel] = TrackInfo(volume, sound_type)
         return channel
     
@@ -33,7 +35,23 @@ class BgManager:
         self.current[channel] = TrackInfo(volume, sound_type)
         return channel
         
-
+    def get_channels(self, sound : pygame.mixer.Sound) -> list[pygame.mixer.Channel]:
+        """Gets all the channels that are playing a specific sound."""
+        channels : list[pygame.mixer.Channel] = []
+        for channel in self.current:
+            if channel.get_sound() == sound:
+                channels.append(channel)
+        return channels
+    
+    def get_all_type(self, t : str) -> list[pygame.mixer.Channel]:
+        """Get all channels that are playing a sound of a specific type."""
+        channels : list[pygame.mixer.Channel] = []
+        for channel in self.current:
+            info = self.current[channel]
+            if info.type == t:
+                channels.append(channel)
+        
+        return channels
 
     def stop_channel(self, channel : pygame.mixer.Channel):
         """Stop a currently playing channel."""
@@ -41,17 +59,17 @@ class BgManager:
         if channel in self.current:
             self.current.pop(channel)
     
-    def stop_track(self, track : pygame.mixer.Sound):
+    def stop_sound(self, sound : pygame.mixer.Sound):
         """Stop a currently playing track."""
         to_remove : list[pygame.mixer.Channel] = []
         for channel in self.current:
-            if channel.get_sound() == track:
+            if channel.get_sound() == sound:
                 to_remove.append(channel)
         
         for channel in to_remove:
             self.current.pop(channel)
         
-        track.stop()
+        sound.stop()
     
     def stop_all_type(self, t : str):
         """Stop all sounds of a specific type."""

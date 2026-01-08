@@ -50,7 +50,7 @@ core.game.init()
 game_states.runtime_imports()
 
 clock = pygame.Clock()
-
+core.menu.menu_theme.play(-1)
 async def main():
     try:
         while 1:

@@ -121,6 +121,7 @@ class Game:
     def cleanup(self):
         #Cleanup basic variables
         self.active = False
+        self.state.cleanup()
         self.state = None
         self.game_timer = None
         self.main_camera = None

@@ -10,14 +10,13 @@ You also get major upgrades right before the final boss
 
 --High-- (Things I need to do before the end of the jam)
 -Implement proper enemy entries
--Add a mechanic that allows the player to dodge (??)
+-Add a defensive option for the player
 -Balance the game more
--Add some music
--Add a few sound effects 
-    (damage taken, enemy hit, alternate fire cooldown over, normal/special shot fired,)
 -Implement destroyable projectiles
 -Add more upgrades
 -Add basic informations to the menu (high-score, controls)
+-Add a sound effect for enemies shooting
+-Game over sequence
 
 --Medium-- (Things I will add if I have time to spare)
 -Improve the player sprites/animation
@@ -30,6 +29,8 @@ You also get major upgrades right before the final boss
 -Add a way to see how much health enemies have
 -Add a visual on the cards that shows the old and new numerical values of the stats
 -Improve visual on the upgrade cards
+-Improve a few sound effects
+-Add some music
 
 --Low-- (Things I won't add in the game jam due to time constraints)
 -Settings

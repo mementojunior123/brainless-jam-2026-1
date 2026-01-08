@@ -127,8 +127,8 @@ WAVE_DATA : dict[int, WaveData] = {
             'elite' : 6,
             'gunner' : 5
         },
-        "spawn_cooldown" : 1.9,
-        "spawn_rate_penalty_per_enemy" : 0.0,
+        "spawn_cooldown" : 1.25,
+        "spawn_rate_penalty_per_enemy" : 0.25,
         'bosses' : []
     },
 
@@ -138,8 +138,8 @@ WAVE_DATA : dict[int, WaveData] = {
             'elite' : 8,
             'gunner' : 6
         },
-        "spawn_cooldown" : 1.8,
-        "spawn_rate_penalty_per_enemy" : 0,
+        "spawn_cooldown" : 1.20,
+        "spawn_rate_penalty_per_enemy" : 0.2,
         'bosses' : []
     },
 
@@ -149,8 +149,8 @@ WAVE_DATA : dict[int, WaveData] = {
             'elite' : 8,
             'gunner' : 6
         },
-        "spawn_cooldown" : 1.7,
-        "spawn_rate_penalty_per_enemy" : 0,
+        "spawn_cooldown" : 1.0,
+        "spawn_rate_penalty_per_enemy" : 0.2,
         'bosses' : []
     },
 
@@ -160,8 +160,8 @@ WAVE_DATA : dict[int, WaveData] = {
             'elite' : 10,
             'gunner' : 6
         },
-        "spawn_cooldown" : 1.6,
-        "spawn_rate_penalty_per_enemy" : 0.0,
+        "spawn_cooldown" : 1.0,
+        "spawn_rate_penalty_per_enemy" : 0.15,
         'bosses' : []
     },
 
@@ -171,13 +171,19 @@ WAVE_DATA : dict[int, WaveData] = {
             'elite' : 10,
             'gunner' : 6
         },
-        "spawn_cooldown" : 1.5,
-        "spawn_rate_penalty_per_enemy" : 0.0,
+        "spawn_cooldown" : 0.9,
+        "spawn_rate_penalty_per_enemy" : 0.15,
         'bosses' : ['basic_boss']
     },
 }
 
 class MainGameState(NormalGameState):
+    main_theme : pygame.Sound = pygame.Sound("assets/audio/music/theme2_trimmed.ogg")
+    main_theme.set_volume(0.3)
+
+    boss_theme : pygame.Sound = pygame.Sound("assets/audio/music/theme1.ogg")
+    boss_theme.set_volume(0.2)
+
     def __init__(self, game_object : "Game", prev_main_state : Union["MainGameState", None] = None, wave_num : int = 1):
         self.game : Game = game_object
         self.player : Player
@@ -186,6 +192,8 @@ class MainGameState(NormalGameState):
             self.spawn_background()
             self.player = Player.spawn("midbottom", pygame.Vector2(480, 520))
             self.screen_size = core_object.main_display.get_size()
+            core_object.bg_manager.play(self.main_theme, 1.0)
+            ShopControlScript.update_music_volume(1.0)
         else:
             self.player = prev_main_state.player
             self.screen_size = prev_main_state.screen_size
@@ -195,7 +203,8 @@ class MainGameState(NormalGameState):
 
         self.wave_number : int = wave_num
         self.game.alert_player(f"Wave {self.wave_number} start")
-
+        if not core_object.bg_manager.get_all_type("Music"):
+            core_object.bg_manager.play(self.main_theme, 1.0, fade_ms=2000)
     def spawn_background(self):
         bg = Background.spawn(0)
         while True:
@@ -219,6 +228,12 @@ class MainGameState(NormalGameState):
     
     def transition_to_shop(self):
         self.game.state = ShopGameState(self.game, self.wave_number, self)
+    
+
+    def cleanup(self):
+        super().cleanup()
+        core_object.bg_manager.stop_all_music()
+
 
 class MainControlScipt(CoroutineScript):
     def initialize(self, time_source : TimeSource):
@@ -310,16 +325,39 @@ class BasicWaveControlScript(CoroutineScript):
             delta = yield
         while BaseEnemy.active_elements:
             delta = yield
+        boss_fadein_timer = None
         if bosses:
+            boss_delay_timer : Timer = Timer(2, time_source)
+            while not boss_delay_timer.isover():
+                new_vol = pygame.math.lerp(1.0, 0.0, (boss_delay_timer.get_time() * 2) / boss_delay_timer.duration)
+                ShopControlScript.update_music_volume(new_vol)
+                delta = yield
+            core_object.bg_manager.stop_all_music()
+            ShopControlScript.update_music_volume(1.0)
+            boss_fadein_timer : Timer = Timer(4, time_source)
+            core_object.bg_manager.play(MainGameState.boss_theme, 1.0)
             active_boss : BaseBoss = BasicWaveControlScript.spawn_boss(bosses[0])
             bosses.pop(0)
             while bosses:
                 if not active_boss.active:
                     active_boss : BaseBoss = BasicWaveControlScript.spawn_boss(bosses[0])
                     bosses.pop(0)
+                ShopControlScript.update_music_volume(
+                    pygame.math.lerp(0, 1, boss_fadein_timer.get_time() / boss_fadein_timer.duration))
                 delta = yield
         while BaseEnemy.active_elements:
+            if boss_fadein_timer:
+                ShopControlScript.update_music_volume(
+                    pygame.math.lerp(0, 1, boss_fadein_timer.get_time() / boss_fadein_timer.duration))
             delta = yield
+        if boss_fadein_timer:
+            boss_fadein_timer.set_duration(2)
+            while not boss_fadein_timer.isover():
+                ShopControlScript.update_music_volume(
+                    pygame.math.lerp(1, 0, interpolation.quad_ease_out(boss_fadein_timer.get_time() / boss_fadein_timer.duration)))
+                delta = yield
+            core_object.bg_manager.stop_all_music()
+            ShopControlScript.update_music_volume(1.0)
         return "Done"
 
 class ShopGameState(NormalGameState):
@@ -410,6 +448,10 @@ class ShopGameState(NormalGameState):
     
     def transition_to_main(self):
         self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1)
+    
+    def cleanup(self):
+        super().cleanup()
+        self.prev.cleanup()
 
 class ShopControlScript(CoroutineScript):
     def initialize(self, time_source : TimeSource, upgrades : dict["UpgradeType", float|int], player : "Player",
@@ -421,6 +463,11 @@ class ShopControlScript(CoroutineScript):
     
     def process_frame(self, values : float) -> Union[None, "UpgradeType"]:
         return super().process_frame(values)
+
+    @staticmethod
+    def update_music_volume(new_volume : float):
+        for channel in core_object.bg_manager.get_all_type('Music'):
+            channel.set_volume(core_object.bg_manager.global_volume * new_volume * core_object.bg_manager.current[channel].volume)
     
     @staticmethod
     def generate_x_positions(nb : int, centerx : int) -> list[int]:
@@ -493,6 +540,8 @@ class ShopControlScript(CoroutineScript):
         yield
         delta : float = core_object.dt
         while not delay_timer.isover():
+            new_volume = pygame.math.lerp(1, 0.2, interpolation.quad_ease_out(delay_timer.get_time() / delay_timer.duration))
+            ShopControlScript.update_music_volume(new_volume)
             delta = yield
         player.can_shoot = True
         to_remove : list[UpgradeCard] = []
@@ -504,6 +553,7 @@ class ShopControlScript(CoroutineScript):
                     break
             if picked_card:
                 break
+            ShopControlScript.update_music_volume(0.2)
             delta = yield
         for card in cards:
             if card != picked_card:
@@ -511,6 +561,15 @@ class ShopControlScript(CoroutineScript):
         picked_card.when_picked()
         picked_upgrade_type : UpgradeType = ([k for k in card_dict if card_dict[k] == picked_card])[0]
         game_state.apply_upgrade(picked_upgrade_type)
+        music_fadein_timer : Timer = Timer(1.0, time_source)
+        if not core_object.bg_manager.get_all_type("Music"):
+            core_object.bg_manager.play(MainGameState.main_theme, 1.0)
+            ShopControlScript.update_music_volume(0.2)
+            start = 0
+            interp_style = interpolation.quad_ease_in
+        else:
+            start = 0.3
+            interp_style = interpolation.linear
         while cards:
             to_remove.clear()
             for card in cards:
@@ -518,7 +577,10 @@ class ShopControlScript(CoroutineScript):
                     to_remove.append(card)
             for card in to_remove:
                 cards.remove(card)
+            new_volume = pygame.math.lerp(start, 1, interp_style(music_fadein_timer.get_time() / music_fadein_timer.duration))
+            ShopControlScript.update_music_volume(new_volume)
             delta = yield
+        ShopControlScript.update_music_volume(1.0)
         return picked_upgrade_type
 
 class GameOverGameState(GameState):
@@ -527,6 +589,7 @@ class GameOverGameState(GameState):
         self.control_script : GameOverControlScript = GameOverControlScript()
         self.control_script.initialize(self.game.game_timer.get_time)
         self.game.alert_player("Game over!")
+        core_object.bg_manager.stop_all_music()
     
     def main_logic(self, delta : float):
         self.control_script.process_frame(delta)

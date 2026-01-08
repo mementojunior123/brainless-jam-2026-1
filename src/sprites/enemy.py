@@ -21,6 +21,10 @@ class BaseEnemy(Sprite):
         180)
     default_image2 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/enemy/alien.png", (0, 255, 0))
     display_size : tuple[int, int] = core_object.main_display.get_size()
+    enemy_hit_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/enemy_hit.ogg")
+    enemy_hit_sfx.set_volume(0.35)
+    enemy_killed_sfx : pygame.Sound = pygame.Sound("assets/audio/sfx/enemy_killed2.ogg")
+    enemy_killed_sfx.set_volume(0.50)
     def __init__(self) -> None:
         super().__init__()
         self.type : EnemyType|BossType
@@ -120,12 +124,13 @@ class BasicEnemy(BaseNormalEnemy):
         self.take_damage(projectile.damage)
         overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
         point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
-        self.get_rect_colliding
         if self.health <= 0:
             self.kill_instance_safe()
             ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
+            core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
         else:
             ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
+            core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
 
     def take_damage(self, damage : float):
         core_object.log(f"Basic enemy took damage : {damage}")
@@ -228,12 +233,13 @@ class EliteEnemy(BaseNormalEnemy):
         self.take_damage(projectile.damage)
         overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
         point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
-        self.get_rect_colliding
         if self.health <= 0:
             self.kill_instance_safe()
             ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
+            core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
         else:
             ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
+            core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
     
     def take_damage(self, damage : float):
         core_object.log(f"Elite enemy took damage : {damage}")
@@ -335,12 +341,13 @@ class GunnerEnemy(BaseNormalEnemy):
         self.take_damage(projectile.damage)
         overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
         point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
-        self.get_rect_colliding
         if self.health <= 0:
             self.kill_instance_safe()
             ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
+            core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
         else:
             ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
+            core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
     
     def take_damage(self, damage : float):
         core_object.log(f"Gunner enemy took damage : {damage}")
@@ -451,7 +458,7 @@ class GunnerEnemyMoveScript(CoroutineScript):
                         if GunnerEnemyMoveScript.predict_projectile_contact(
                         unit, proj, pygame.Vector2(direction * unit.speed, 0), bounding_box):
                             dodge_cooldown.restart()
-                            if random.randint(1, 10) <= 3:
+                            if random.randint(1, 10) <= 6:
                                 direction *= -1
             delta = yield
 
@@ -502,7 +509,7 @@ class GunnerEnemyShootingScript(CoroutineScript):
                 unit.fire_normal_projectile()
                 min_shot_cooldown.restart()
                 current_aggro = 0
-                aggro_required = random.uniform(60, 120)
+                aggro_required = random.uniform(40, 80)
             delta = yield
 
 class EnemyTypes(Enum):
