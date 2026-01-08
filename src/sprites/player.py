@@ -94,7 +94,7 @@ class Player(Sprite):
 
     DASH_COOLDOWN : float = 3
     DASH_DURATION : float = 0.3
-    DASH_INVULN_TIME : float = 0.10
+    DASH_INVULN_TIME : float = 0.15
 
     display_size : tuple[int, int] = core_object.main_display.get_size()
     def __init__(self) -> None:
@@ -103,8 +103,8 @@ class Player(Sprite):
         self.animation_script : PlayerAnimationScript
         self.velocity : pygame.Vector2
 
-        self.max_hp : float
-        self.current_hp : float
+        self.max_hp : int
+        self.current_hp : int
         self.visible : bool
         self.can_shoot : bool
 

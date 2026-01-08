@@ -6,10 +6,12 @@ from framework.utils.my_timer import Timer, TimeSource
 from framework.core.core import core_object
 from framework.game.coroutine_scripts import CoroutineScript
 import src.sprites.projectiles
+from src.game_states import SCORE_EVENT
 from src.sprites.projectiles import NormalProjectile, BaseProjectile, HomingProjectile, Teams
 import random
 from enum import Enum
 from framework.utils.particle_effects import ParticleEffect
+import framework.utils.interpolation as interpolation
 
 class BaseEnemy(Sprite):
     active_elements : list['BaseEnemy'] = []
@@ -25,10 +27,12 @@ class BaseEnemy(Sprite):
     enemy_hit_sfx.set_volume(0.41)
     enemy_killed_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/enemy_killed2.ogg")
     enemy_killed_sfx.set_volume(0.50)
+
     def __init__(self) -> None:
         super().__init__()
         self.type : EnemyType|BossType
         self.health : float
+        self.invincible : bool
         BaseEnemy.inactive_elements.append(self)
 
     @classmethod
@@ -51,6 +55,9 @@ class BaseEnemy(Sprite):
     def update(self, delta: float):
         pass
 
+    def give_score(self, score : int):
+        pygame.event.post(pygame.Event(SCORE_EVENT, {'score' : score}))
+
     def when_hit(self, proj):
         self.kill_instance_safe()
 
@@ -67,6 +74,7 @@ class BaseEnemy(Sprite):
         super().clean_instance()
         self.type = None
         self.health = None
+        self.invincible = None
 
 class BaseNormalEnemy(BaseEnemy):
     active_elements : list['BaseNormalEnemy'] = []
@@ -106,6 +114,8 @@ class BasicEnemy(BaseNormalEnemy):
         element.zindex = 0
         element.current_camera = core_object.game.main_camera
 
+        element.invincible = False
+
         element.control_script = BasicEnemyControlScript()
         element.control_script.initialize(core_object.game.game_timer.get_time, element)
         element.speed = BasicEnemy.BASE_SPEED
@@ -128,11 +138,14 @@ class BasicEnemy(BaseNormalEnemy):
             self.kill_instance_safe()
             ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
             core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
-        else:
+            self.give_score(5)
+        elif not self.invincible:
             ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
             core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
+            self.give_score(1)
 
     def take_damage(self, damage : float):
+        if self.invincible: return
         core_object.log(f"Basic enemy took damage : {damage}")
         self.health -= damage
     
@@ -167,13 +180,28 @@ class BasicEnemyControlScript(CoroutineScript):
         screen_sizex, screen_sizey = screen_size
         centerx, centery = screen_sizex // 2, screen_sizey // 2
 
+        
+        target_position : pygame.Vector2 = unit.position.copy()
+        unit.move_rect("bottom", -20)
+        start_position : pygame.Vector2 = unit.position.copy()
+        transition_timer : Timer = Timer(0.8, time_source)
+        delta = yield
+        unit.invincible = True
+        if delta is None: delta = core_object.dt
+        while not transition_timer.isover():
+            unit.position = start_position.lerp(target_position, interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration))
+            delta = yield
+        unit.position = target_position
+        unit.invincible = False
+
         move_timer : Timer = Timer(-1, time_source)
         shot_timer : Timer = Timer(1, time_source)
-        direction : int = 1 if random.randint(0, 1) else -1
-        delta = yield
-        if delta is None: delta = core_object.dt
+        direction : int = 1 if unit.position.x < centerx else -1
+        base_speed = unit.speed
         while True:
-            unit.position += pygame.Vector2(direction * unit.speed * delta, 0)
+            speed_percent = interpolation.quad_ease_out(pygame.math.clamp(move_timer.get_time() / 0.3, 0, 1))
+            actual_speed = pygame.math.lerp(0, base_speed, speed_percent)
+            unit.position += pygame.Vector2(direction * actual_speed * delta, 0)
             if unit.rect.right > screen_sizex: 
                 unit.move_rect("right", screen_sizex)
                 direction = -1
@@ -214,7 +242,7 @@ class EliteEnemy(BaseNormalEnemy):
         element.move_rect(position_anchor, position)
         element.zindex = 0
         element.current_camera = core_object.game.main_camera
-
+        element.invincible = False
         element.control_script = EliteEnemyControlScript()
         element.control_script.initialize(core_object.game.game_timer.get_time, element)
         element.speed = EliteEnemy.BASE_SPEED
@@ -237,11 +265,14 @@ class EliteEnemy(BaseNormalEnemy):
             self.kill_instance_safe()
             ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
             core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
-        else:
+            self.give_score(10)
+        elif not self.invincible:
             ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
             core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
+            self.give_score(1)
     
     def take_damage(self, damage : float):
+        if self.invincible: return
         core_object.log(f"Elite enemy took damage : {damage}")
         self.health -= damage
     
@@ -276,13 +307,28 @@ class EliteEnemyControlScript(CoroutineScript):
         screen_sizex, screen_sizey = screen_size
         centerx, centery = screen_sizex // 2, screen_sizey // 2
 
+        
+        target_position : pygame.Vector2 = unit.position.copy()
+        unit.move_rect("bottom", -20)
+        start_position : pygame.Vector2 = unit.position.copy()
+        transition_timer : Timer = Timer(0.8, time_source)
+        delta = yield
+        unit.invincible = True
+        if delta is None: delta = core_object.dt
+        while not transition_timer.isover():
+            unit.position = start_position.lerp(target_position, interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration))
+            delta = yield
+        unit.position = target_position
+        unit.invincible = False
+        
         move_timer : Timer = Timer(-1, time_source)
         shot_timer : Timer = Timer(1, time_source)
-        direction : int = 1 if random.randint(0, 1) else -1
-        delta = yield
-        if delta is None: delta = core_object.dt
+        direction : int = 1 if unit.position.x < centerx else -1
+        base_speed = unit.speed
         while True:
-            unit.position += pygame.Vector2(direction * unit.speed * delta, 0)
+            speed_percent = interpolation.quad_ease_out(pygame.math.clamp(move_timer.get_time() / 0.3, 0, 1))
+            actual_speed = pygame.math.lerp(0, base_speed, speed_percent)
+            unit.position += pygame.Vector2(direction * actual_speed * delta, 0)
             if unit.rect.right > screen_sizex: 
                 unit.move_rect("right", screen_sizex)
                 direction = -1
@@ -322,7 +368,7 @@ class GunnerEnemy(BaseNormalEnemy):
         element.move_rect(position_anchor, position)
         element.zindex = 0
         element.current_camera = core_object.game.main_camera
-
+        element.invincible = False
         element.control_script = GunnerEnemyControlScript()
         element.control_script.initialize(core_object.game.game_timer.get_time, element)
         element.speed = GunnerEnemy.BASE_SPEED
@@ -345,11 +391,14 @@ class GunnerEnemy(BaseNormalEnemy):
             self.kill_instance_safe()
             ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
             core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
-        else:
+            self.give_score(10)
+        elif not self.invincible:
             ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
             core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
+            self.give_score(1)
     
     def take_damage(self, damage : float):
+        if self.invincible: return
         core_object.log(f"Gunner enemy took damage : {damage}")
         self.health -= damage
     
@@ -383,14 +432,25 @@ class GunnerEnemyControlScript(CoroutineScript):
         screen_sizex, screen_sizey = screen_size
         centerx, centery = screen_sizex // 2, screen_sizey // 2
         bounding_box : pygame.Rect = pygame.Rect(0, 0, screen_sizex, screen_sizey)
+        
+        target_position : pygame.Vector2 = unit.position.copy()
+        unit.move_rect("bottom", -20)
+        start_position : pygame.Vector2 = unit.position.copy()
+        transition_timer : Timer = Timer(0.8, time_source)
+        delta = yield
+        unit.invincible = True
+        if delta is None: delta = core_object.dt
+        while not transition_timer.isover():
+            unit.position = start_position.lerp(target_position, interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration))
+            delta = yield
+        unit.position = target_position
+        unit.invincible = False
 
         shooting_script : GunnerEnemyShootingScript = GunnerEnemyShootingScript()
         shooting_script.initialize(time_source, unit)
         moving_script : GunnerEnemyMoveScript = GunnerEnemyMoveScript()
         moving_script.initialize(time_source, unit)
     
-        delta = yield
-        if delta is None: delta = core_object.dt
         while True:
             shooting_script.process_frame(delta)
             moving_script.process_frame(delta)
@@ -436,13 +496,16 @@ class GunnerEnemyMoveScript(CoroutineScript):
         bounding_box : pygame.Rect = pygame.Rect(0, 0, screen_sizex, screen_sizey)
 
         move_timer : Timer = Timer(-1, time_source)
-        direction : int = 1 if random.randint(0, 1) else -1
+        direction : int = 1 if unit.position.x < centerx else -1
         dodge_cooldown : Timer = Timer(0.5, time_source)
     
         delta = yield
         if delta is None: delta = core_object.dt
+        base_speed = unit.speed
         while True:
-            unit.position += pygame.Vector2(direction * unit.speed * delta, 0)
+            speed_percent = interpolation.quad_ease_out(pygame.math.clamp(move_timer.get_time() / 0.3, 0, 1))
+            actual_speed = pygame.math.lerp(0, base_speed, speed_percent)
+            unit.position += pygame.Vector2(direction * actual_speed * delta, 0)
             if unit.rect.right > screen_sizex: 
                 unit.move_rect("right", screen_sizex)
                 direction = -1
@@ -456,7 +519,7 @@ class GunnerEnemyMoveScript(CoroutineScript):
                         if proj.team not in (Teams.ALLIED, Teams.FFA):
                             continue
                         if GunnerEnemyMoveScript.predict_projectile_contact(
-                        unit, proj, pygame.Vector2(direction * unit.speed, 0), bounding_box):
+                        unit, proj, pygame.Vector2(direction * base_speed, 0), bounding_box):
                             dodge_cooldown.restart()
                             if random.randint(1, 10) <= 6:
                                 direction *= -1

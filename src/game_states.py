@@ -125,7 +125,7 @@ WAVE_DATA : dict[int, WaveData] = {
         'enemies' : {
             'basic' : 7,
             'elite' : 6,
-            'gunner' : 5
+            'gunner' : 4
         },
         "spawn_cooldown" : 1.25,
         "spawn_rate_penalty_per_enemy" : 0.25,
@@ -136,7 +136,7 @@ WAVE_DATA : dict[int, WaveData] = {
         'enemies' : {
             'basic' : 4,
             'elite' : 8,
-            'gunner' : 6
+            'gunner' : 5
         },
         "spawn_cooldown" : 1.20,
         "spawn_rate_penalty_per_enemy" : 0.2,
@@ -146,8 +146,8 @@ WAVE_DATA : dict[int, WaveData] = {
     8 : {
         'enemies' : {
             'basic' : 4,
-            'elite' : 8,
-            'gunner' : 6
+            'elite' : 10,
+            'gunner' : 5
         },
         "spawn_cooldown" : 1.0,
         "spawn_rate_penalty_per_enemy" : 0.2,
@@ -156,9 +156,9 @@ WAVE_DATA : dict[int, WaveData] = {
 
     9 : {
         'enemies' : {
-            'basic' : 4,
-            'elite' : 10,
-            'gunner' : 6
+            'basic' : 6,
+            'elite' : 11,
+            'gunner' : 5
         },
         "spawn_cooldown" : 1.0,
         "spawn_rate_penalty_per_enemy" : 0.15,
@@ -167,8 +167,8 @@ WAVE_DATA : dict[int, WaveData] = {
 
     10 : {
         'enemies' : {
-            'basic' : 4,
-            'elite' : 10,
+            'basic' : 6,
+            'elite' : 13,
             'gunner' : 6
         },
         "spawn_cooldown" : 0.9,
@@ -177,27 +177,49 @@ WAVE_DATA : dict[int, WaveData] = {
     },
 }
 
+SCORE_EVENT = pygame.event.custom_type()
+
 class MainGameState(NormalGameState):
     main_theme : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/music/theme2_trimmed.ogg")
-    main_theme.set_volume(0.3)
+    main_theme.set_volume(0.2)
 
     boss_theme : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/music/theme1.ogg")
     boss_theme.set_volume(0.2)
+
+    @property
+    def score(self):
+        return self._score
+    
+    @score.setter
+    def score(self, new_val : int):
+        self._score = new_val
+        self.score_sprite.text = f"Score : {self._score}"
 
     def __init__(self, game_object : "Game", prev_main_state : Union["MainGameState", None] = None, wave_num : int = 1):
         self.game : Game = game_object
         self.player : Player
         self.screen_size : tuple[int, int]
+        self.score_sprite : TextSprite
+        self._score : int
         if prev_main_state is None:
             self.spawn_background()
+            core_object.fps_sprite.visible = False
             self.player = Player.spawn("midbottom", pygame.Vector2(480, 520))
             self.screen_size = core_object.main_display.get_size()
+            self.score_sprite = TextSprite(pygame.Vector2(15, 10), 'topleft', 0, 'Score : 0', 'fps_sprite', 
+                            text_settings=(self.game.font_40, 'White', False), text_stroke_settings=('Black', 2),
+                            colorkey=(255, 0,0))
+            core_object.main_ui.add(self.score_sprite)
+            self._score = 0
             core_object.bg_manager.play(self.main_theme, 1.0)
             ShopControlScript.update_music_volume(1.0)
             src.sprites.player.make_connections()
+            core_object.event_manager.bind(SCORE_EVENT, self.handle_score_event)
         else:
             self.player = prev_main_state.player
             self.screen_size = prev_main_state.screen_size
+            self.score_sprite = prev_main_state.score_sprite
+            self._score = prev_main_state._score
         
         self.control_script : BasicWaveControlScript = BasicWaveControlScript()
         self.control_script.initialize(self.game.game_timer.get_time, wave_num)
@@ -206,6 +228,11 @@ class MainGameState(NormalGameState):
         self.game.alert_player(f"Wave {self.wave_number} start")
         if not core_object.bg_manager.get_all_type("Music"):
             core_object.bg_manager.play(self.main_theme, 1.0, fade_ms=2000)
+    
+    def handle_score_event(self, event : pygame.Event):
+        if event.type == SCORE_EVENT:
+            self.score += event.score
+
     def spawn_background(self):
         bg = Background.spawn(0)
         while True:
@@ -235,6 +262,7 @@ class MainGameState(NormalGameState):
         super().cleanup()
         src.sprites.player.remove_connections()
         core_object.bg_manager.stop_all_music()
+        core_object.event_manager.unbind(SCORE_EVENT, self.handle_score_event)
 
 
 class MainControlScipt(CoroutineScript):
@@ -360,6 +388,9 @@ class BasicWaveControlScript(CoroutineScript):
                 delta = yield
             core_object.bg_manager.stop_all_music()
             ShopControlScript.update_music_volume(1.0)
+            if Player.active_elements:
+                ply = Player.active_elements[0]
+                ply.current_hp = ply.max_hp
         return "Done"
 
 class ShopGameState(NormalGameState):
@@ -515,7 +546,7 @@ class ShopControlScript(CoroutineScript):
             case 'HealHealth':
                 old_health = player.current_hp
                 new_health = min(player.max_hp, player.current_hp + upgrade_value)
-                return f"{old_health:.2f} --> {new_health:.2f} health"
+                return f"{old_health} --> {new_health} health"
             case 'HealMax':
                 return ""
             case 'MaxHealthBonus':
@@ -600,7 +631,7 @@ class ShopControlScript(CoroutineScript):
         screen_sizex, screen_sizey = screen_size
         centerx, centery = screen_sizex // 2, screen_sizey // 2
 
-        delay_timer : Timer = Timer(2, time_source)
+        delay_timer : Timer = Timer(1.5, time_source)
         x_positions : list[int] = ShopControlScript.generate_x_positions(len(upgrades), centerx)
         cards : list[UpgradeCard] = []
         card_dict : dict[UpgradeType, UpgradeCard] = {}
@@ -612,7 +643,7 @@ class ShopControlScript(CoroutineScript):
         yield
         delta : float = core_object.dt
         while not delay_timer.isover():
-            new_volume = pygame.math.lerp(1, 0.2, interpolation.quad_ease_out(delay_timer.get_time() / delay_timer.duration))
+            new_volume = pygame.math.lerp(1, 0.3, interpolation.quad_ease_out(delay_timer.get_time() / delay_timer.duration))
             ShopControlScript.update_music_volume(new_volume)
             delta = yield
         player.can_shoot = True
@@ -625,7 +656,7 @@ class ShopControlScript(CoroutineScript):
                     break
             if picked_card:
                 break
-            ShopControlScript.update_music_volume(0.2)
+            ShopControlScript.update_music_volume(0.3)
             delta = yield
         for card in cards:
             if card != picked_card:
@@ -636,7 +667,7 @@ class ShopControlScript(CoroutineScript):
         music_fadein_timer : Timer = Timer(1.0, time_source)
         if not core_object.bg_manager.get_all_type("Music"):
             core_object.bg_manager.play(MainGameState.main_theme, 1.0)
-            ShopControlScript.update_music_volume(0.2)
+            ShopControlScript.update_music_volume(0.0)
             start = 0
             interp_style = interpolation.quad_ease_in
         else:

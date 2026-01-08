@@ -38,6 +38,10 @@ class BaseProjectile(Sprite):
         self.was_onscreen_once : bool
         self.team : Teams
         self.damage : float
+
+        self.can_destroy : bool
+        self.destructible : bool
+        self.die_after_destroying : bool
         BaseProjectile.inactive_elements.append(self)
 
     @classmethod
@@ -73,6 +77,16 @@ class BaseProjectile(Sprite):
 
         self.velocity *=  ((1 - self.drag) ** delta) ** 0.5
     
+    def check_destruction(self):
+        if not self.destructible:
+            return
+        projectile : BaseProjectile
+        for projectile in self.get_all_colliding(BaseProjectile):
+            if projectile.can_destroy:
+                self.kill_instance_safe()
+            if projectile.die_after_destroying:
+                projectile.kill_instance_safe()
+    
     def clean_instance(self):
         super().clean_instance()
         self.velocity = None
@@ -83,6 +97,10 @@ class BaseProjectile(Sprite):
         self.was_onscreen_once = None
         self.team = None
         self.damage = None
+
+        self.destructible = None
+        self.die_after_destroying = None
+        self.can_destroy = None
 
 class NormalProjectile(BaseProjectile):
     active_elements : list['NormalProjectile'] = []
@@ -97,7 +115,8 @@ class NormalProjectile(BaseProjectile):
     def spawn(cls, new_pos : pygame.Vector2, velocity : pygame.Vector2|None, accel : pygame.Vector2|None, drag : float|None, angle : float,
               custom_image : pygame.Surface, team : Teams = Teams.PACIFIST, 
               projectile_type : str = "", pivot_offset : pygame.Vector2|None = None,
-              zindex : int = 0, damage : float = 1):
+              zindex : int = 0, damage : float = 1, can_destroy : bool = False, destructible : bool = False, 
+              die_after_destroying : bool = True):
         element = cls.inactive_elements[0]
 
         element.image = custom_image
@@ -119,10 +138,16 @@ class NormalProjectile(BaseProjectile):
         element.was_onscreen_once = False
         element.damage = damage
 
+        element.can_destroy = can_destroy
+        element.destructible = destructible
+        element.die_after_destroying = die_after_destroying
+
         cls.unpool(element)
         return element
     
     def update(self, delta : float):
+        if self._zombie:
+            return
         self.velocity *=  ((1 - self.drag) ** delta) ** 0.5
 
         self.velocity += self.acceleration * 0.5 * delta
@@ -135,6 +160,8 @@ class NormalProjectile(BaseProjectile):
                 self.kill_instance_safe()
         else:
             self.was_onscreen_once = True
+        if not self._zombie:
+            self.check_destruction()
     
     def clean_instance(self):
         super().clean_instance()
@@ -162,7 +189,8 @@ class HomingProjectile(BaseProjectile):
               angle_offset : float, custom_image : pygame.Surface, team : Teams = Teams.PACIFIST, 
               projectile_type : str = "", pivot_offset : pygame.Vector2|None = None,
               zindex : int = 0, homing_range : float = 1000, homing_rate : float = 3, 
-              homing_targets : list[list[Sprite]|Sprite]|None = None, damage : float = 1):
+              homing_targets : list[list[Sprite]|Sprite]|None = None, damage : float = 1, 
+              can_destroy : bool = False, destructible : bool = False, die_after_destroying : bool = True):
         if homing_targets is None: homing_targets = []
         if not isinstance(homing_targets, list):
             homing_targets = [homing_targets]
@@ -187,6 +215,10 @@ class HomingProjectile(BaseProjectile):
         element.was_onscreen_once = False
         element.damage = damage
 
+        element.can_destroy = can_destroy
+        element.destructible = destructible
+        element.die_after_destroying = die_after_destroying
+
         element.homing_targets = homing_targets
         element.homing_range = homing_range
         element.homing_rate = homing_rate
@@ -197,6 +229,8 @@ class HomingProjectile(BaseProjectile):
         return element
     
     def update(self, delta : float):
+        if self._zombie:
+            return
         self.velocity *=  ((1 - self.drag) ** delta) ** 0.5
         self.update_orientation_half(delta)
         self.velocity += self.acceleration * 0.5 * delta
@@ -210,6 +244,8 @@ class HomingProjectile(BaseProjectile):
                 self.kill_instance_safe()
         else:
             self.was_onscreen_once = True
+        if not self._zombie:
+            self.check_destruction()
     
     def pick_homing_target(self) -> Sprite|None:
         if not self.homing_targets: return None

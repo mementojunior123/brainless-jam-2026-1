@@ -53,7 +53,6 @@ class BasicBoss(BaseBoss):
         self.control_script : BasicBossControlScript
         self.health_bar : UiSprite
         self.max_hp : float
-        self.invincible : bool
         BasicBoss.inactive_elements.append(self)
 
     @classmethod
@@ -130,6 +129,7 @@ class BasicBoss(BaseBoss):
         if not self.invincible:
             ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
             core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
+            self.give_score(1)
 
     def take_damage(self, damage : float):
         if not self.invincible:
@@ -151,7 +151,6 @@ class BasicBoss(BaseBoss):
     def clean_instance(self):
         super().clean_instance()
         self.control_script = None
-        self.invincible = None
         self.max_hp = None
         self.health_bar = None
 
@@ -193,6 +192,7 @@ class BasicBossControlScript(CoroutineScript):
         while not death_script.is_over:
             death_script.process_frame(delta)
             delta = yield
+        unit.give_score(200)
         return
 
 class BasicBossEntryScript(CoroutineScript):
@@ -288,7 +288,11 @@ class BasicBossMovementScript(CoroutineScript):
                         if BasicBossMovementScript.predict_projectile_contact(
                         unit, proj, pygame.Vector2(direction * SPEED, 0), bounding_box):
                             dodge_cooldown.set_duration(0.5 if distance_to_margin > 200 else 1.0 )
-                            if random.randint(1, 10) <= 8:
+                            if distance_to_margin < 100:
+                                luck = 5
+                            else:
+                                luck = 8
+                            if random.randint(1, 10) <= luck:
                                 direction *= -1
             delta = yield
 
@@ -338,13 +342,14 @@ class BasicBossShootingScript(CoroutineScript):
             if min_shot_cooldown.isover() and current_aggro >= aggro_required:
                 angle_offset : float = (pygame.Vector2(0, 1).angle_to(player.position - unit.position)) * 0
                 unit.fire_normal_projectile(angle_offset)
-                fired_shotgun : bool = random.randint(1, 4) == 1
+                shotgun_odds : int = 1 if angle_offset < 10 else 2
+                fired_shotgun : bool = random.randint(1, 4) <= shotgun_odds
                 if fired_shotgun:
                     unit.fire_normal_projectile(angle_offset - 20)
                     unit.fire_normal_projectile(angle_offset + 20)
                 min_shot_cooldown.restart()
                 current_aggro = 0
-                aggro_required = random.uniform(40, 80) if not fired_shotgun else random.uniform(90, 135)
+                aggro_required = random.uniform(40, 80) if not fired_shotgun else random.uniform(60, 120)
             delta = yield
 
 class BasicBossDeathSequence(CoroutineScript):
