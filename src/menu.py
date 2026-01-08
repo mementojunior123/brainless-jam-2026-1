@@ -62,11 +62,15 @@ class Menu(BaseMenu):
         from framework.core.core import core_object
         BaseMenu._get_core_object()
     
+    def update_high_score(self):
+        high_score_sprite : TextSprite = self.get_sprite_by_name(1, 'highscore_text')
+        high_score_sprite.text = f'High score : {core_object.storage.high_score}'
+        high_score_sprite.rect.midright = pygame.Vector2(960 - 15, 540 // 2)
+    
     def prepare_entry(self, stage = 1):
         super().prepare_entry(stage)
         self.menu_theme.play()
-        high_score_sprite : TextSprite = self.get_sprite_by_name(1, 'highscore_text')
-        high_score_sprite.text = f'High score : {core_object.storage.high_score}'
+        self.update_high_score()
     
     def init(self):
         """Initialises a menu object. Must be ran after runtime imports."""
@@ -87,8 +91,11 @@ class Menu(BaseMenu):
         BaseUiElements.new_text_sprite('SPACE to shoot', (Menu.font_50, 'Black', False), 0, 'midleft', (15, centery - 25)),
         BaseUiElements.new_text_sprite('F for a special attack', (Menu.font_50, 'Black', False), 0, 'midleft', (15, centery + 25)),
         BaseUiElements.new_text_sprite('SHIFT to dash', (Menu.font_50, 'Black', False), 0, 'midleft', (15, centery + 75)),
+        BaseUiElements.new_text_sprite('P to pause', (Menu.font_50, 'Black', False), 0, 'midleft', (15, centery + 125)),
         TextSprite(pygame.Vector2(window_size[0] - 15, centery), 'midright', 0,
-        f'High score : {core_object.storage.high_score}', name='highscore_text', text_settings=(Menu.font_50, 'Black', False))
+        f'High score : {core_object.storage.high_score}', name='highscore_text', text_settings=(Menu.font_50, 'Black', False)),
+        BaseUiElements.new_button('RedButton', 'Reset', 1, 'bottomright', (window_size[0] - 15, window_size[1] - 15), (0.5, 1.4), 
+        {'name' : 'reset_button'}, (Menu.font_40, 'Black', False))
         ]
         ]
         self.bg_color = (94, 129, 162)
@@ -144,6 +151,10 @@ class Menu(BaseMenu):
                 if name == "play_button":
                     self.menu_theme.stop()
                     pygame.event.post(pygame.Event(core_object.START_GAME, {'mode' : 'test'}))
+                elif name == 'reset_button':
+                    core_object.storage.reset()
+                    core_object.storage.save(core_object.is_web())
+                    self.update_high_score()
                 if name == 'test_button':
                     self.goto_stage(2)
             case 2:

@@ -214,15 +214,16 @@ class MainGameState(NormalGameState):
             core_object.bg_manager.play(self.main_theme, 1.0)
             ShopControlScript.update_music_volume(1.0)
             src.sprites.player.make_connections()
-            core_object.event_manager.bind(SCORE_EVENT, self.handle_score_event)
         else:
             self.player = prev_main_state.player
             self.screen_size = prev_main_state.screen_size
             self.score_sprite = prev_main_state.score_sprite
             self._score = prev_main_state._score
+            core_object.event_manager.unbind(SCORE_EVENT, prev_main_state.handle_score_event)
         
         self.control_script : BasicWaveControlScript = BasicWaveControlScript()
         self.control_script.initialize(self.game.game_timer.get_time, wave_num)
+        core_object.event_manager.bind(SCORE_EVENT, self.handle_score_event)
 
         self.wave_number : int = wave_num
         self.game.alert_player(f"Wave {self.wave_number} start")
