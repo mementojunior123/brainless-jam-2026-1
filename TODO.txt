@@ -10,7 +10,6 @@ You also get major upgrades right before the final boss
 
 --High-- (Things I need to do before the end of the jam)
 -Implement proper enemy entries
--Add visuals for the dash
 -Balance the game more
 -Implement destroyable projectiles
 -Add more upgrades
