@@ -584,8 +584,9 @@ EnemyType : TypeAlias = Literal['basic', 'elite', 'gunner']
 
 class BossTypes(Enum):
     BASIC_BOSS = 'basic_boss'
+    GOLDEN_BOSS = 'golden_boss'
 
-BossType : TypeAlias = Literal['basic_boss']
+BossType : TypeAlias = Literal['basic_boss', 'golden_boss']
 
 def runtime_imports():
     global Player, src

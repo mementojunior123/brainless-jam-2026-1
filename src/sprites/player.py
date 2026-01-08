@@ -94,7 +94,7 @@ class Player(Sprite):
 
     DASH_COOLDOWN : float = 3
     DASH_DURATION : float = 0.3
-    DASH_INVULN_TIME : float = 0.15
+    DASH_INVULN_TIME : float = 0.22
 
     display_size : tuple[int, int] = core_object.main_display.get_size()
     def __init__(self) -> None:
@@ -299,7 +299,7 @@ class Player(Sprite):
         core_object.bg_manager.play_sfx(Player.normal_shot_sfx, 1.0)
         return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -10), None, None, 0,
                                        recolor_image(BaseProjectile.normal_image3, "White"), team=Teams.ALLIED,
-                                       damage = normal_damage)
+                                       damage = normal_damage, can_destroy=True)
 
     def perform_alternate_fire(self, ignore_cooldown : bool = False) -> BaseProjectile|None:
         if not (self.alternate_fire_cooldown_timer.isover() or ignore_cooldown) or not self.can_shoot:
@@ -320,7 +320,7 @@ class Player(Sprite):
         core_object.bg_manager.play_sfx(Player.lazer_shot_sfx, 1.0)
         return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -16), None, None, 0,
                                        recolor_image(BaseProjectile.normal_image3, "Purple"), team=Teams.ALLIED,
-                                       damage=damage)
+                                       damage=damage, can_destroy=True)
     
     def fire_shotgun(self, damage : int) -> list[NormalProjectile]:
         core_object.bg_manager.play_sfx(Player.shotgun_shot_sfx, 1.0)
@@ -329,7 +329,7 @@ class Player(Sprite):
             proj_list.append(
                 NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -16).rotate(angle),
                         None, None, angle, recolor_image(BaseProjectile.normal_image4, "White"), team=Teams.ALLIED,
-                        damage=damage)
+                        damage=damage, can_destroy=True)
             )
         return proj_list
     

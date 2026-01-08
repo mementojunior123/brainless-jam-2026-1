@@ -82,6 +82,12 @@ class BaseProjectile(Sprite):
             return
         projectile : BaseProjectile
         for projectile in self.get_all_colliding(BaseProjectile):
+            if projectile == self:
+                continue
+            if projectile.team == Teams.PACIFIST:
+                continue
+            if projectile.team == self.team and (self.team != Teams.FFA):
+                continue
             if projectile.can_destroy:
                 self.kill_instance_safe()
             if projectile.die_after_destroying:

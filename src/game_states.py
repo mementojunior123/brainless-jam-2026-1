@@ -173,7 +173,7 @@ WAVE_DATA : dict[int, WaveData] = {
         },
         "spawn_cooldown" : 0.9,
         "spawn_rate_penalty_per_enemy" : 0.15,
-        'bosses' : ['basic_boss']
+        'bosses' : ['golden_boss']
     },
 }
 
@@ -327,6 +327,8 @@ class BasicWaveControlScript(CoroutineScript):
         core_object.game.alert_player("Boss incoming!")
         if boss_type == "basic_boss":
             return BasicBoss.spawn()
+        elif boss_type == 'golden_boss':
+            return GoldenBoss.spawn()
         else:
             core_object.log(f"Enemy type '{boss_type}' not found")
     
@@ -352,7 +354,7 @@ class BasicWaveControlScript(CoroutineScript):
                 enemy_type_chosen : EnemyType = BasicWaveControlScript.pick_random_enemy(enemies)
                 enemies[enemy_type_chosen] -= 1
                 BasicWaveControlScript.spawn_enemy(enemy_type_chosen, random.randint(100, screen_sizex - 100))
-            if pygame.key.get_pressed()[pygame.K_p]:
+            if pygame.key.get_pressed()[pygame.K_l]:
                 bosses.clear()
             if pygame.key.get_pressed()[pygame.K_o]:    
                 enemies.clear()
@@ -773,9 +775,9 @@ def runtime_imports():
     from src.sprites.enemy import BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType, BossTypes, BossType
     src.sprites.enemy.runtime_imports()
 
-    global BasicBoss, BaseBoss
+    global BasicBoss, BaseBoss, GoldenBoss
     import src.sprites.bosses
-    from src.sprites.bosses import BasicBoss, BaseBoss
+    from src.sprites.bosses import BasicBoss, BaseBoss, GoldenBoss
     src.sprites.bosses.runtime_imports()
 
 class NetworkTestGameState(NormalGameState):
