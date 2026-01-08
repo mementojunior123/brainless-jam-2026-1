@@ -18,7 +18,6 @@ You also get major upgrades right before the final boss
 -Game over sequence
 -Add a separate card design for major upgrades
 -Full heal when a boss is beaten?
--Add a visual on the cards that shows the old and new numerical values of the stats
 
 --Medium-- (Things I will add if I have time to spare)
 -Improve the player sprites/animation

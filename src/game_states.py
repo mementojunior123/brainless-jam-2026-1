@@ -14,7 +14,7 @@ from framework.utils.ui.base_ui_elements import BaseUiElements
 import framework.utils.interpolation as interpolation
 from framework.utils.my_timer import Timer, TimeSource
 from framework.game.sprite import Sprite
-from framework.utils.helpers import average, random_float
+from framework.utils.helpers import average, random_float, ColorType
 from framework.utils.ui.brightness_overlay import BrightnessOverlay
 from framework.utils.particle_effects import ParticleEffect
 
@@ -393,6 +393,11 @@ class ShopGameState(NormalGameState):
                 'AllFirerateMultiplier' : 0.5,
                 'AlternateFireType' : random.choice([AlternateFireTypes.SHOTGUN.value])
             }
+        if self.prev.player.current_hp == self.prev.player.max_hp:
+            if 'HealHealth' in candidates:
+                candidates.pop('HealHealth')
+            if 'HealMax' in candidates:
+                candidates.pop('HealMax')
         amount_chosen : int = min(count, len(candidates))
         candidate_list : list[UpgradeType] = list(candidates.keys())
         random.shuffle(candidate_list)
@@ -487,37 +492,102 @@ class ShopControlScript(CoroutineScript):
         return result
     
     @staticmethod
-    def get_improvement_text(upgrade_type : "UpgradeType", upgrade_value : int|float) -> str:
-        return ""
+    def get_improvement_text(upgrade_type : "UpgradeType", upgrade_value : int|float, player : "Player") -> str:
+        match upgrade_type:
+            case 'AllDamageMultiplier': 
+                old_normal_damage : float = player.get_normal_damage()
+                old_special_damage : float = player.get_special_damage()
+                player.upgrades['AllDamageMultiplier'] += upgrade_value
+                new_normal_damage : float = player.get_normal_damage()
+                new_special_damage : float = player.get_special_damage()
+                player.upgrades['AllDamageMultiplier'] -= upgrade_value
+                return f"{old_normal_damage:.2f} --> {new_normal_damage:.2f} dmg\n{old_special_damage:.2f} --> {new_special_damage:.2f} special dmg"
+            case 'AllFirerateMultiplier':
+                old_normal_firerate : float = player.get_normal_firerate()
+                old_special_firerate : float = player.get_special_firerate()
+                player.upgrades['AllFirerateMultiplier'] += upgrade_value
+                new_normal_firerate : float = player.get_normal_firerate()
+                new_special_firerate : float = player.get_special_firerate()
+                player.upgrades['AllFirerateMultiplier'] -= upgrade_value
+                return f"{old_normal_firerate:.2f}/s --> {new_normal_firerate:.2f}/s\n{old_special_firerate:.2f}/s --> {new_special_firerate:.2f}/s"
+            case 'AlternateFireType':
+                return ""
+            case 'HealHealth':
+                old_health = player.current_hp
+                new_health = min(player.max_hp, player.current_hp + upgrade_value)
+                return f"{old_health:.2f} --> {new_health:.2f} health"
+            case 'HealMax':
+                return ""
+            case 'MaxHealthBonus':
+                return f"{player.max_hp} --> {player.max_hp + upgrade_value} max health"
+            case 'RegularDamageBonus':
+                old_normal_damage : float = player.get_normal_damage()
+                player.upgrades['RegularDamageBonus'] += upgrade_value
+                new_normal_damage : float = player.get_normal_damage()
+                player.upgrades['RegularDamageBonus'] -= upgrade_value
+                return f"{old_normal_damage:.2f} --> {new_normal_damage:.2f} dmg"
+            case 'RegularFirerateMultiplier':
+                old_normal_firerate : float = player.get_normal_firerate()
+                player.upgrades['RegularFirerateMultiplier'] += upgrade_value
+                new_normal_firerate : float = player.get_normal_firerate()
+                player.upgrades['RegularFirerateMultiplier'] -= upgrade_value
+                return f"{old_normal_firerate:.2f}/s --> {new_normal_firerate:.2f}/s"
+            case 'SpecialDamageMultipler':
+                old_special_damage : float = player.get_special_damage()
+                player.upgrades['SpecialDamageMultipler'] += upgrade_value
+                new_special_damage : float = player.get_special_damage()
+                player.upgrades['SpecialDamageMultipler'] -= upgrade_value
+                return f"{old_special_damage:.2f} --> {new_special_damage:.2f} special dmg"
+            case 'SpecialFirerateMultiplier':
+                old_firerate_damage : float = player.get_special_firerate()
+                player.upgrades['SpecialFirerateMultiplier'] += upgrade_value
+                new_special_firerate : float = player.get_special_firerate()
+                player.upgrades['SpecialFirerateMultiplier'] -= upgrade_value
+                return f"{old_firerate_damage:.2f}/s --> {new_special_firerate:.2f}/s"
     
     @staticmethod
-    def format_card_text(upgrade_type : "UpgradeType", upgrade_value : int|float) -> list[tuple[str, int, int|str]]:
-        DEFAULT_FONT_SIZE : int = 28
+    def format_card_text(upgrade_type : "UpgradeType", upgrade_value : int|float, player : "Player") -> list[tuple[str, int, int|str, ColorType]]:
+        DEFAULT_FONT_SIZE : int = 31
+        improvement_text : str = ShopControlScript.get_improvement_text(upgrade_type, upgrade_value, player)
         match upgrade_type:
             case 'AllDamageMultiplier':
-                return [(f"+{upgrade_value:.0%} damage\nto all weapons", 50, DEFAULT_FONT_SIZE)]
+                normal_improvement, special_improvement = improvement_text.split('\n')
+                return [(f"+{upgrade_value:.0%} damage\nto all weapons", 50, DEFAULT_FONT_SIZE, "White"),
+                (normal_improvement, 200, DEFAULT_FONT_SIZE, "Light Blue"),
+                (special_improvement, 200 + (DEFAULT_FONT_SIZE + 1), DEFAULT_FONT_SIZE, "Purple")]
             case 'AllFirerateMultiplier':
-                return [(f"+{upgrade_value:.0%} firerate\nwith every weapon", 50, DEFAULT_FONT_SIZE)]
+                normal_improvement, special_improvement = improvement_text.split('\n')
+                return [(f"+{upgrade_value:.0%} firerate\nwith every weapon", 50, DEFAULT_FONT_SIZE, "White"),
+                (normal_improvement, 200, DEFAULT_FONT_SIZE, "Light Blue"),
+                (special_improvement, 200 + (DEFAULT_FONT_SIZE + 1), DEFAULT_FONT_SIZE, "Purple")]
             case 'AlternateFireType':
-                return [
-                    (f"New special attack:", 50, DEFAULT_FONT_SIZE), 
-                    (src.sprites.player.alternate_fire_base_stats[upgrade_value]['name'], 100, DEFAULT_FONT_SIZE),
-                    (src.sprites.player.alternate_fire_base_stats[upgrade_value]['description'], 150, DEFAULT_FONT_SIZE)
+                result = [
+                    (f"New special attack:", 50, DEFAULT_FONT_SIZE, "White"), 
+                    (src.sprites.player.alternate_fire_base_stats[upgrade_value]['name'], 100, DEFAULT_FONT_SIZE, "White"),
                 ]
+                for i, line in enumerate(src.sprites.player.alternate_fire_base_stats[upgrade_value]['description'].split('\n')):
+                    result.append((line, 150 + (DEFAULT_FONT_SIZE + 1) * i, DEFAULT_FONT_SIZE, "White"))
+                return result
             case 'HealHealth':
-                return [(f"Heal up to {upgrade_value} health", 50, DEFAULT_FONT_SIZE)]
+                return [(f"Heal up to {upgrade_value} health", 50, DEFAULT_FONT_SIZE, "White"),
+                        (improvement_text, 200, DEFAULT_FONT_SIZE, "Green")]
             case 'HealMax':
-                return [(f"Heal up to max HP", 50, DEFAULT_FONT_SIZE)]
+                return [(f"Heal up to max HP", 50, DEFAULT_FONT_SIZE, "White")]
             case 'MaxHealthBonus':
-                return [(f"Increase max health\nby {upgrade_value}", 50, DEFAULT_FONT_SIZE)] 
+                return [(f"Increase max health\nby {upgrade_value}", 50, DEFAULT_FONT_SIZE, "White"),
+                        (improvement_text, 200, DEFAULT_FONT_SIZE, "Green")] 
             case 'RegularDamageBonus':
-                return [(f"Increase normal\nprojectile damage by {upgrade_value:.1f}", 50, DEFAULT_FONT_SIZE)]
+                return [(f"Increase normal\nprojectile damage by {upgrade_value:.1f}", 50, DEFAULT_FONT_SIZE, "White"),
+                        (improvement_text, 200, DEFAULT_FONT_SIZE, "Light Blue")]
             case 'RegularFirerateMultiplier':
-                return [(f"Increase normal\nprojectile firerate by {upgrade_value:.0%}", 50, DEFAULT_FONT_SIZE)]
+                return [(f"Increase normal\nprojectile firerate by {upgrade_value:.0%}", 50, DEFAULT_FONT_SIZE, "White"),
+                        (improvement_text, 200, DEFAULT_FONT_SIZE, "Light Blue")]
             case 'SpecialDamageMultipler':
-                return [(f"Increase special attack\ndamage by {upgrade_value:.0%}", 50, DEFAULT_FONT_SIZE)]
+                return [(f"Increase special attack\ndamage by {upgrade_value:.0%}", 50, DEFAULT_FONT_SIZE, "White"),
+                        (improvement_text, 200, DEFAULT_FONT_SIZE, "Purple")]
             case 'SpecialFirerateMultiplier':
-                return [(f"Increase special attack\nfirerate by {upgrade_value:.0%}", 50, DEFAULT_FONT_SIZE)]
+                return [(f"Increase special attack\nfirerate by {upgrade_value:.0%}", 50, DEFAULT_FONT_SIZE, "White"),
+                        (improvement_text, 200, DEFAULT_FONT_SIZE, "Purple")]
 
             case _:
                 return [("Unknown upgrade", 50, DEFAULT_FONT_SIZE), (upgrade_type, 100, DEFAULT_FONT_SIZE), (str(upgrade_value), 150, DEFAULT_FONT_SIZE)]
@@ -535,7 +605,7 @@ class ShopControlScript(CoroutineScript):
         cards : list[UpgradeCard] = []
         card_dict : dict[UpgradeType, UpgradeCard] = {}
         for pos, upgrade_type, upgrade_value in zip(x_positions, upgrades.keys(), upgrades.values()):
-            card = UpgradeCard.spawn(pos, ShopControlScript.format_card_text(upgrade_type, upgrade_value))
+            card = UpgradeCard.spawn(pos, ShopControlScript.format_card_text(upgrade_type, upgrade_value, player))
             cards.append(card)
             card_dict[upgrade_type] = card
         player.can_shoot = False

@@ -1,6 +1,6 @@
 import pygame
 from framework.game.sprite import Sprite
-from framework.utils.helpers import load_alpha_to_colorkey
+from framework.utils.helpers import load_alpha_to_colorkey, ColorType
 from framework.core.core import core_object
 from framework.game.coroutine_scripts import CoroutineScript
 from framework.utils.my_timer import Timer, TimeSource
@@ -9,7 +9,7 @@ import framework.utils.interpolation as interpolation
 from framework.utils.ui.textsprite import TextSprite
 from src.sprites.projectiles import BaseProjectile, Teams
 
-CARD_DIMENSIONS : int = (260, 350)
+CARD_DIMENSIONS : int = (280, 350)
 
 class UpgradeCard(Sprite):
     active_elements : list['UpgradeCard'] = []
@@ -19,7 +19,7 @@ class UpgradeCard(Sprite):
     default_image : pygame.Surface = pygame.surface.Surface(CARD_DIMENSIONS)
     default_image.fill((150, 150, 150))
     pygame.draw.rect(default_image, (130,160,210), default_image.get_rect(), width=10)
-    default_image.set_colorkey((0, 255, 0))
+    default_image.set_colorkey((0, 255, 255))
     BACKGROUND_SPEED : float = 2
     SPAWN_BACKGROUND : bool = True
     display_size : tuple[int, int] = core_object.main_display.get_size()
@@ -33,7 +33,7 @@ class UpgradeCard(Sprite):
         return pygame.Font('assets/fonts/Pixeltype.ttf', size)
 
     @classmethod
-    def spawn(cls, x_pos : int, text_lines : list[tuple[str, int, int|str]]) -> "UpgradeCard":
+    def spawn(cls, x_pos : int, text_lines : list[tuple[str, int, int|str, ColorType]]) -> "UpgradeCard":
         """
         text_tuple is a tuple of the text, y_level (relative to card.top), size
         """
@@ -55,10 +55,11 @@ class UpgradeCard(Sprite):
         }
         card_width : int = element.image.get_size()[0]
         for text_tuple in text_lines:
-            text, y_level, size = text_tuple
+            text, y_level, size, text_color = text_tuple
             font_used = available_fonts.get(size, None) or UpgradeCard.get_font(size)
-            text_image : pygame.Surface = TextSprite((0, 0), 'center', -1, text, text_settings=(font_used, 'White', False),
-                                                  text_stroke_settings=('Black', 1), colorkey=(0, 255, 0)).surf
+            text_stroke_size = 0 if text_color == "White" else 0
+            text_image : pygame.Surface = TextSprite((0, 0), 'center', -1, text, text_settings=(font_used, text_color, False),
+                                                  text_stroke_settings=('Black', text_stroke_size), colorkey=(0, 255, 255)).surf
             element.image.blit(text_image, text_image.get_rect(center=(card_width // 2, y_level)))
             
         element.rect = element.image.get_rect()

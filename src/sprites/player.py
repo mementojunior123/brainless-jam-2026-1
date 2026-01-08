@@ -29,8 +29,8 @@ class AlternateFireBaseStatLine(TypedDict):
 
 alternate_fire_base_stats : dict[int, AlternateFireBaseStatLine] = {
     AlternateFireTypes.LAZER.value : {
-        'damage' : 5,
-        'firerate' : 1.2,
+        'damage' : 4,
+        'firerate' : 1.0,
         'name' : 'Lazer',
         'description' : 'a lazer type weapon'
     },
@@ -276,12 +276,25 @@ class Player(Sprite):
         self.dash_track.origin = self.position
         core_object.bg_manager.play_sfx(self.dash_sfx, volume=1.0)
     
+    def get_normal_damage(self) -> float:
+        return (1 + self.upgrades['RegularDamageBonus']) * self.upgrades['AllDamageMultiplier']
+    
+    def get_normal_firerate(self) -> float:
+        return (Player.BASE_SHOT_FIRERATE * self.upgrades['RegularFirerateMultiplier']) * self.upgrades['AllFirerateMultiplier']
+    
+    def get_special_damage(self) -> float:
+        return (self.upgrades['AlternateFireBaseDamage'] * self.upgrades['SpecialDamageMultipler']) * self.upgrades['AllDamageMultiplier']
+
+    def get_special_firerate(self) -> float:
+        return (self.upgrades['AlternateFireBaseFireRate'] * self.upgrades['SpecialFirerateMultiplier']) * self.upgrades['AllFirerateMultiplier']
+
+    
     def shoot(self, ignore_cooldown : bool = False) -> BaseProjectile|None:
         if not (self.shot_cooldown_timer.isover() or ignore_cooldown) or not self.can_shoot:
             return None
         
-        normal_damage : float = (1 + self.upgrades['RegularDamageBonus']) * self.upgrades['AllDamageMultiplier']
-        normal_firerate : float = (Player.BASE_SHOT_FIRERATE * self.upgrades['RegularFirerateMultiplier']) * self.upgrades['AllFirerateMultiplier']
+        normal_damage : float = self.get_normal_damage()
+        normal_firerate : float = self.get_normal_firerate()
         self.shot_cooldown_timer.set_duration(1 / normal_firerate)
         core_object.bg_manager.play_sfx(Player.normal_shot_sfx, 1.0)
         return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -10), None, None, 0,
@@ -291,8 +304,8 @@ class Player(Sprite):
     def perform_alternate_fire(self, ignore_cooldown : bool = False) -> BaseProjectile|None:
         if not (self.alternate_fire_cooldown_timer.isover() or ignore_cooldown) or not self.can_shoot:
             return None
-        special_damage : float = (self.upgrades['AlternateFireBaseDamage'] * self.upgrades['SpecialDamageMultipler']) * self.upgrades['AllDamageMultiplier']
-        special_firerate : float = (self.upgrades['AlternateFireBaseFireRate'] * self.upgrades['SpecialFirerateMultiplier']) * self.upgrades['AllFirerateMultiplier']
+        special_damage : float = self.get_special_damage()
+        special_firerate : float = self.get_special_firerate()
         self.alternate_fire_cooldown_timer.set_duration(1 / special_firerate)
         match self.upgrades['AlternateFireType']:
             case AlternateFireTypes.LAZER.value:
