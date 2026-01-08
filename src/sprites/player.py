@@ -11,6 +11,7 @@ import src.sprites.enemy
 from src.sprites.enemy import BaseEnemy, BaseNormalEnemy
 from enum import Enum
 from framework.utils.ui.ui_sprite import UiSprite
+from framework.utils.particle_effects import ParticleEffect, ParticleEffectTrack
 
 class AlternateFireTypes(Enum):
     LAZER = 0
@@ -80,6 +81,9 @@ class Player(Sprite):
     shotgun_shot_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/shotgun_shot.ogg")
     shotgun_shot_sfx.set_volume(0.7)
 
+    dash_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/dash.ogg")
+    dash_sfx.set_volume(0.4)
+
     ACCEL_SPEED : float = 3.0
     FRICTION : float = 0.3
     MIN_VELOCITY : float = 0.1
@@ -112,9 +116,11 @@ class Player(Sprite):
 
         self.ui_hearts : list[UiSprite]
         self.ui_alternate_fire_sprite : UiSprite
+        self.ui_dash_sprite : UiSprite
 
         self.dash_timer : Timer
         self.dash_direction : int|None
+        self.dash_track : ParticleEffectTrack|None
 
         Player.inactive_elements.append(self)
     
@@ -176,6 +182,13 @@ class Player(Sprite):
         element.dash_timer = Timer(Player.DASH_DURATION, core_object.game.game_timer.get_time)
         element.dash_timer.start_time -= Player.DASH_COOLDOWN
         element.dash_direction = None
+        element.dash_track = None
+
+        element.ui_dash_sprite = element.create_dash_cooldown_visual()
+        element.update_dash_cooldown_visual()
+        core_object.main_ui.add(element.ui_dash_sprite)
+
+        
 
         cls.unpool(element)
         return element
@@ -191,6 +204,12 @@ class Player(Sprite):
         self.check_collision()
         self.update_hearts()
         self.update_alternate_fire_visual()
+        self.update_dash_cooldown_visual()
+        if self.dash_track:
+            if self.dash_track.ended:
+                self.dash_track = None
+            else:
+                self.dash_track.origin = self.position
 
     def update_movement(self, delta : float):
         accel = self.calculate_acceleration()
@@ -253,6 +272,9 @@ class Player(Sprite):
         self.dash_direction = dash_direction
         self.dash_timer.restart()
         self.velocity += pygame.Vector2(dash_direction * 6, 0)
+        self.dash_track = ParticleEffect.load_effect('dash_effect').play(self.position, core_object.game.game_timer.get_time)
+        self.dash_track.origin = self.position
+        core_object.bg_manager.play_sfx(self.dash_sfx, volume=1.0)
     
     def shoot(self, ignore_cooldown : bool = False) -> BaseProjectile|None:
         if not (self.shot_cooldown_timer.isover() or ignore_cooldown) or not self.can_shoot:
@@ -364,6 +386,24 @@ class Player(Sprite):
         pygame.draw.rect(self.ui_alternate_fire_sprite.surf, 'White', (0, max_height - bar_height, bar_width, bar_height))
         self.ui_alternate_fire_sprite.rect.midleft = self.rect.midright + pygame.Vector2(10, 0)
     
+    def create_dash_cooldown_visual(self) -> UiSprite:
+        BAR_DIMENSIONS : tuple[int, int] = (50, 2)
+        bar_image : pygame.Surface = pygame.Surface(BAR_DIMENSIONS)
+        bar_image.fill((0, 255, 0))
+        bar_image.set_colorkey((0, 255, 0))
+        new_sprite : UiSprite = UiSprite(bar_image, bar_image.get_rect(midtop = self.rect.midbottom + pygame.Vector2(0, 10)),
+                                         -1, 'dash_cooldown')
+        return new_sprite
+    
+    def update_dash_cooldown_visual(self):
+        self.ui_dash_sprite.surf.fill((0, 255, 0))
+        max_width : int = self.ui_dash_sprite.rect.width
+        bar_height : int = self.ui_dash_sprite.rect.height
+        ready_percentage : float = self.dash_timer.get_time() / Player.DASH_COOLDOWN
+        bar_width : int = int(pygame.math.lerp(max_width, 0, ready_percentage))
+        pygame.draw.rect(self.ui_dash_sprite.surf, 'White', (0, 0, bar_width, bar_height))
+        self.ui_dash_sprite.rect.midtop = self.rect.midbottom + pygame.Vector2(0, 4)
+    
     def handle_key_event(self, event : pygame.Event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LSHIFT:
@@ -394,9 +434,11 @@ class Player(Sprite):
         self.invincible = None
         self.ui_hearts = None
         self.ui_alternate_fire_sprite = None
+        self.ui_dash_sprite = None
 
         self.dash_timer = None
         self.dash_direction = None
+        self.dash_track = None
 
 class PlayerAnimationScript(CoroutineScript):
     def initialize(self, time_source : TimeSource, player : Player, cycle_time : float):

@@ -372,9 +372,16 @@ boss_killed : EffectData = {'offset_x' : [-8, 8], 'offset_y' : [-8, 8], 'velocit
             'update_method' : 'simulated', 'destroy_offscreen' : True, 'copy_surface' : True, 'type' : None
 }
 
+dash_effect : EffectData = {'offset_x' : [-16, 16], 'offset_y' : [-8, 8], 'velocity_x' : [0,0], 'velocity_y' : [-1.5,-1.5], 'angle' : [0, 0], 'speed' : [0, 0],
+            'accel_x' : [0,0], 'accel_y' : [-0.11,-0.10], 'drag' : [0, 0],
+            'init_spawn_count' : 5, 'cooldown' : 0.025, 'target_spawn_count' : 35, 'lifetime' : [5,5], 'part_per_wave' : 5,
+            'main_texture' : Particle.test_image, 'alt_textures' : None, "animation" : Animation.get_animation('dash_particle_alpha_gradient'),
+            'update_method' : 'simulated', 'destroy_offscreen' : True, 'copy_surface' : True, 'type' : None
+}
+
 
 ParticleEffect.effects_data = {'test' : test_effect, 'test2' : test_effect2, 'enemy_damaged' : enemy_damaged,
-                               'enemy_killed' : enemy_killed, 'boss_killed' : boss_killed}
+                               'enemy_killed' : enemy_killed, 'boss_killed' : boss_killed, 'dash_effect' : dash_effect}
 
 def runtime_imports():
     global core_object
