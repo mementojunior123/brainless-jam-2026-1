@@ -29,6 +29,8 @@ class BaseProjectile(Sprite):
     normal_image3 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_3-white.png", (0, 255, 0))
     normal_image4 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_4-white.png", (0, 255, 0))
 
+    explosion_sfx1 : pygame.Sound = pygame.Sound("assets/audio/sfx/explosion1.ogg")
+    explosion_sfx1.set_volume(0.7)
 
     def __init__(self) -> None:
         super().__init__()
@@ -91,6 +93,10 @@ class BaseProjectile(Sprite):
             if projectile.team == self.team and (self.team != Teams.FFA):
                 continue
             if projectile.can_destroy:
+                overlap_point : tuple[int, int] = self.mask.overlap(self.mask, (self.rect.x - projectile.rect.x, self.rect.y - projectile.rect.y)) or (self.rect.width // 2, self.rect.height // 2)
+                point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
+                ParticleEffect.load_effect('explosion_small_effect').play(point_of_contact, core_object.game.game_timer.get_time)
+                core_object.bg_manager.play_sfx(BaseProjectile.explosion_sfx1, 0.75)
                 self.kill_instance_safe()
             if projectile.die_after_destroying:
                 projectile.kill_instance_safe()
@@ -245,7 +251,7 @@ class HomingProjectile(BaseProjectile):
     def explode(self, hit : Union["BaseEnemy", "Player"]):
         overlap_point : tuple[int, int] = self.mask.overlap(self.mask, (self.rect.x - hit.rect.x, self.rect.y - hit.rect.y)) or (self.rect.width // 2, self.rect.height // 2)
         point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
-    
+        got_a_kill : bool = False if getattr(hit, 'current_hp', getattr(hit, 'health')) > 0 else True
         if self.team == Teams.ALLIED or self.team == Teams.FFA:
             for enemy in BaseEnemy.active_elements:
                 if enemy == hit:
@@ -254,10 +260,12 @@ class HomingProjectile(BaseProjectile):
                     enemy.take_damage(self.explosive_damage)
                     enemy.give_score(1)
                     if enemy.health < 0:
-                        enemy.kill_instance_safe()
-                        enemy.give_score(enemy.KILL_SCORE)
-                        ParticleEffect.load_effect('enemy_killed').play(enemy.position, core_object.game.game_timer.get_time)
-                        core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
+                        if isinstance(enemy, BaseNormalEnemy):
+                            enemy.kill_instance_safe()
+                            got_a_kill = True
+                            enemy.give_score(enemy.KILL_SCORE)
+                            ParticleEffect.load_effect('enemy_killed').play(enemy.position, core_object.game.game_timer.get_time)
+                            core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
                     else:
                         ParticleEffect.load_effect('enemy_damaged').play(enemy.position, core_object.game.game_timer.get_time)
                         core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
@@ -267,7 +275,10 @@ class HomingProjectile(BaseProjectile):
                     continue
                 if (self.position - player.position).magnitude() < self.explosive_range:
                     player.take_damage(self.explosive_damage)
-    
+        effect_played = 'explosion_effect' if got_a_kill else 'explosion_small_effect'
+        ParticleEffect.load_effect(effect_played).play(point_of_contact, core_object.game.game_timer.get_time)
+        core_object.bg_manager.play_sfx(BaseProjectile.explosion_sfx1, 1.0)
+
     def update(self, delta : float):
         if self._zombie:
             return
@@ -345,9 +356,9 @@ for _ in range(50):
 
 def runtime_imports():
     global src
-    global BaseEnemy
+    global BaseEnemy, BaseNormalEnemy
     import src.sprites.enemy
-    from src.sprites.enemy import BaseEnemy
+    from src.sprites.enemy import BaseEnemy, BaseNormalEnemy
 
     global Player
     import src.sprites.player

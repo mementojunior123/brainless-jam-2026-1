@@ -244,7 +244,7 @@ WAVE_DATA : dict[int, WaveData] = {
 SCORE_EVENT = pygame.event.custom_type()
 
 class MainGameState(NormalGameState):
-    main_theme : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/music/theme2_trimmed.ogg")
+    main_theme : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/music/theme2_trimmed_lazy.ogg")
     main_theme.set_volume(0.2)
 
     boss_theme : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/music/theme1.ogg")

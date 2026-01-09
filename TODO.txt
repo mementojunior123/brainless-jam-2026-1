@@ -8,15 +8,10 @@ You also get major upgrades right before the final boss
 -Add boss #3
 
 --High-- (Things I need to do before the end of the jam)
--Fix the looping on the main theme and menu theme
--Add a sound effect for enemies shooting
 -Game over sequence and win sequence
 -Add a feature that makes upgrades scale faster after the first and the second boss
 -Add a separate card design for major upgrades
 -Add a final (fourth) boss
--Add a VFX for projectile destruction
--Add a VFX for when the rocket hits something
--Add a SFX for the rocket being fired, hitting something and being destroyed
 -Add more natural alerts instead of Game.alert_player()
 -Improve weapon descriptions
 -Do balancing and add more content
@@ -40,6 +35,7 @@ You also get major upgrades right before the final boss
 -Add some music
 -Volume options
 -Add a confirmation for resetting high score
+-Add distinc sound effects for enemies shooting (currently using player sounds but slightly quieter)
 
 --Low-- (Things I won't add in the game jam due to time constraints)
 -Settings

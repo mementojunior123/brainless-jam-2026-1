@@ -349,8 +349,11 @@ class BasicBossShootingScript(CoroutineScript):
                 shotgun_odds : int = 1 if angle_offset < 10 else 2
                 fired_shotgun : bool = random.randint(1, 4) <= shotgun_odds
                 if fired_shotgun:
+                    core_object.bg_manager.play_sfx(Player.shotgun_shot_sfx, 1.0)
                     unit.fire_normal_projectile(angle_offset - 20)
                     unit.fire_normal_projectile(angle_offset + 20)
+                else:
+                    pass
                 min_shot_cooldown.restart()
                 current_aggro = 0
                 aggro_required = random.uniform(40, 80) if not fired_shotgun else random.uniform(60, 120)
@@ -742,6 +745,7 @@ class GoldenBossHomingShotScript(CoroutineScript):
 
                 unit.fire_homing_projectile(angle=angle_offset - 30)
                 unit.fire_homing_projectile(angle=angle_offset + 30)
+                core_object.bg_manager.play_sfx(Player.rocket_shot_sfx, 1.0)
                 min_shot_cooldown.restart()
                 current_aggro = 0
                 aggro_required = random.uniform(90, 270)

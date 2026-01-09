@@ -88,6 +88,9 @@ class Player(Sprite):
     shotgun_shot_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/shotgun_shot.ogg")
     shotgun_shot_sfx.set_volume(0.7)
 
+    rocket_shot_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/rocket_shot.ogg")
+    rocket_shot_sfx.set_volume(0.18)
+
     dash_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/dash.ogg")
     dash_sfx.set_volume(0.4)
 
@@ -132,7 +135,7 @@ class Player(Sprite):
         Player.inactive_elements.append(self)
     
     @staticmethod
-    def get_default_upgrades() -> Upgrades:
+    def get_default_upgrades(start_weapon : int = AlternateFireTypes.LAZER.value) -> Upgrades:
         return {
             'RegularDamageBonus' : 0,
             'SpecialDamageMultipler' : 1,
@@ -142,9 +145,9 @@ class Player(Sprite):
             'SpecialFirerateMultiplier' : 1,
             'AllFirerateMultiplier' : 1,
 
-            'AlternateFireType' : AlternateFireTypes.LAZER.value,
-            'AlternateFireBaseDamage' : alternate_fire_base_stats[AlternateFireTypes.LAZER.value]['damage'],
-            'AlternateFireBaseFireRate' : alternate_fire_base_stats[AlternateFireTypes.LAZER.value]['firerate'],
+            'AlternateFireType' : start_weapon,
+            'AlternateFireBaseDamage' : alternate_fire_base_stats[start_weapon]['damage'],
+            'AlternateFireBaseFireRate' : alternate_fire_base_stats[start_weapon]['firerate'],
             
             'MaxHealthBonus' : 0,
         }
@@ -343,6 +346,7 @@ class Player(Sprite):
         return proj_list
     
     def fire_rocket(self, damage : float) -> HomingProjectile:
+        core_object.bg_manager.play_sfx(Player.rocket_shot_sfx, 1.0)
         return HomingProjectile.spawn(self.position + pygame.Vector2(0, -30), 
                                       pygame.Vector2(0, -10), 
                                       None, None, 0,

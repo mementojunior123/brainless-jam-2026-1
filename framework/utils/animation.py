@@ -707,10 +707,16 @@ dash_particle_alpha_gradient = [
     {"type" : "alpha_gradient", "target" : 0, "time" : 0.5, "easing_style" : interpolation.linear},
 ]
 
+explosion_particle_alpha_gradient = [
+    {"type" : "wait", "time" : 0.4},
+    {"type" : "alpha_gradient", "target" : 0, "time" : 1.5, "easing_style" : interpolation.linear},
+]
+
 class Animation:
     ANIM_DATA = {"test" : test_anim, 'enemy_hit_particle_alpha_gradient' : enemy_hit_particle_alpha_gradient,
                  'enemy_killed_particle_alpha_gradient' : enemy_killed_particle_alpha_gradient,
-                 "dash_particle_alpha_gradient" : dash_particle_alpha_gradient}
+                 "dash_particle_alpha_gradient" : dash_particle_alpha_gradient,
+                 "explosion_particle_alpha_gradient" : explosion_particle_alpha_gradient}
 
     @classmethod
     def get_animation(cls, name):

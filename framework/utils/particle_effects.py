@@ -6,6 +6,7 @@ from random import random
 from math import sin, radians, cos, atan2
 from framework.game.sprite import Sprite
 from framework.utils.pivot_2d import Pivot2D
+from framework.utils.helpers import load_alpha_to_colorkey
 from typing import TypedDict, Literal, Union, TypeAlias
 
 def __random_float(a, b):
@@ -59,6 +60,7 @@ class Particle(Sprite):
 
     test_image = pygame.surface.Surface((4,4))
     pygame.draw.rect(test_image, 'White', (0, 0, 4, 4))
+    spark_particle_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/fire_particle.png", (0, 255, 0))
     bounding_box = pygame.Rect(0, 0, 960, 540)
 
     def __init__(self) -> None:
@@ -379,9 +381,23 @@ dash_effect : EffectData = {'offset_x' : [-16, 16], 'offset_y' : [-8, 8], 'veloc
             'update_method' : 'simulated', 'destroy_offscreen' : True, 'copy_surface' : True, 'type' : None
 }
 
+explosion_effect : EffectData = {'offset_x' : [0, 0], 'offset_y' : [0, 0], 'velocity_x' : [0,0], 'velocity_y' : [-2.0,-2.0], 'angle' : [0, 360], 'speed' : [3, 3],
+            'accel_x' : [0,0], 'accel_y' : [0.12,0.15], 'drag' : [0, 0],
+            'init_spawn_count' : 20, 'cooldown' : 0.20, 'target_spawn_count' : 20, 'lifetime' : [5,5], 'part_per_wave' : 20,
+            'main_texture' : Particle.spark_particle_image, 'alt_textures' : None, "animation" : Animation.get_animation('explosion_particle_alpha_gradient'),
+            'update_method' : 'simulated', 'destroy_offscreen' : True, 'copy_surface' : True, 'type' : None
+}
+
+explosion_small_effect : EffectData = {'offset_x' : [0, 0], 'offset_y' : [0, 0], 'velocity_x' : [0,0], 'velocity_y' : [-2.0,-2.0], 'angle' : [0, 360], 'speed' : [3, 3],
+            'accel_x' : [0,0], 'accel_y' : [0.12,0.15], 'drag' : [0, 0],
+            'init_spawn_count' : 10, 'cooldown' : 0.20, 'target_spawn_count' : 10, 'lifetime' : [5,5], 'part_per_wave' : 10,
+            'main_texture' : Particle.spark_particle_image, 'alt_textures' : None, "animation" : Animation.get_animation('explosion_particle_alpha_gradient'),
+            'update_method' : 'simulated', 'destroy_offscreen' : True, 'copy_surface' : True, 'type' : None
+}
 
 ParticleEffect.effects_data = {'test' : test_effect, 'test2' : test_effect2, 'enemy_damaged' : enemy_damaged,
-                               'enemy_killed' : enemy_killed, 'boss_killed' : boss_killed, 'dash_effect' : dash_effect}
+                               'enemy_killed' : enemy_killed, 'boss_killed' : boss_killed, 'dash_effect' : dash_effect,
+                               'explosion_effect' : explosion_effect, 'explosion_small_effect' : explosion_small_effect}
 
 def runtime_imports():
     global core_object
