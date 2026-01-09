@@ -520,11 +520,14 @@ class GoldenBossControlScript(CoroutineScript):
         
         main_script : GoldenBossMovementScript = GoldenBossMovementScript()
         main_script2 : GoldenBossShootingScript = GoldenBossShootingScript()
+        main_script3 : GoldenBossHomingShotScript = GoldenBossHomingShotScript()
         main_script.initialize(time_source, unit)
         main_script2.initialize(time_source, unit)
+        main_script3.initialize(time_source, unit)
         while unit.health > 0:
             main_script.process_frame(delta)
             main_script2.process_frame(delta)
+            main_script3.process_frame(delta)
             delta = yield
         unit.invincible = True
         death_script : GoldenBossDeathSequence = GoldenBossDeathSequence()
@@ -631,11 +634,11 @@ class GoldenBossMovementScript(CoroutineScript):
                             continue
                         if GoldenBossMovementScript.predict_projectile_contact(
                         unit, proj, pygame.Vector2(direction * SPEED, 0), bounding_box):
-                            dodge_cooldown.set_duration(0.7 if distance_to_margin > 200 else 1.25 )
+                            dodge_cooldown.set_duration(0.5 if distance_to_margin > 200 else 0.75 )
                             if distance_to_margin < 100:
-                                luck = 4
-                            else:
                                 luck = 6
+                            else:
+                                luck = 8
                             if random.randint(1, 10) <= luck:
                                 direction *= -1
             delta = yield
@@ -685,16 +688,63 @@ class GoldenBossShootingScript(CoroutineScript):
             current_aggro +=  delta * proximity_buff
             if min_shot_cooldown.isover() and current_aggro >= aggro_required:
                 angle_offset : float = (pygame.Vector2(0, 1).angle_to(player.position - unit.position))
-                rocket_odds : int = 1
-                fired_rocket : bool = random.randint(1, 4) <= rocket_odds
-                if fired_rocket:
-                    unit.fire_homing_projectile(angle=angle_offset - 30)
-                    unit.fire_homing_projectile(angle=angle_offset + 30)
-                else:
-                    unit.fire_normal_projectile()
+                unit.fire_normal_projectile()
                 min_shot_cooldown.restart()
                 current_aggro = 0
-                aggro_required = random.uniform(30, 60) if not fired_rocket else random.uniform(45, 90)
+                aggro_required = random.uniform(30, 60)
+            delta = yield
+
+class GoldenBossHomingShotScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : GoldenBoss):
+        return super().initialize(time_source, unit)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None|str:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def player_proximity_buff(x_offset : float) -> float:
+        if x_offset < 16:
+            return 2
+        elif x_offset < 50:
+            return 1.5
+        elif x_offset < 100:
+            return 1
+        elif x_offset < 150:
+            return 0.8
+        else:
+            return 0.8
+    
+    @staticmethod
+    def corou(time_source : TimeSource, unit : GoldenBoss) -> Generator[None, float, str]: #Yield, Send, Return
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+        bounding_box : pygame.Rect = pygame.Rect(0, 0, screen_sizex, screen_sizey)
+
+        min_shot_cooldown : Timer = Timer(0.25, time_source)
+        aggro_required : float = 200.0
+        current_aggro : float = 0
+        player : Player|None
+        if not Player.active_elements:
+            player = None
+        else:
+            player = Player.active_elements[0]
+        delta = yield
+        if delta is None: delta = core_object.dt
+        while True:
+            proximity_buff : float = GoldenBossShootingScript.player_proximity_buff(abs(unit.position.x - player.position.x) if player else 999)
+            current_aggro +=  delta * proximity_buff
+            if min_shot_cooldown.isover() and current_aggro >= aggro_required:
+                angle_offset : float = (pygame.Vector2(0, 1).angle_to(player.position - unit.position))
+
+                unit.fire_homing_projectile(angle=angle_offset - 30)
+                unit.fire_homing_projectile(angle=angle_offset + 30)
+                min_shot_cooldown.restart()
+                current_aggro = 0
+                aggro_required = random.uniform(90, 270)
             delta = yield
 
 class GoldenBossDeathSequence(CoroutineScript):

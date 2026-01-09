@@ -62,7 +62,7 @@ class NormalGameState(GameState):
                 self.pause()
 
 class WaveData(TypedDict):
-    enemies : dict["EnemyType", int]
+    enemies : dict[Union["EnemyType", "BossType"], int]
     spawn_cooldown : float
     spawn_rate_penalty_per_enemy : float
     bosses : list["BossType"]
@@ -123,9 +123,9 @@ WAVE_DATA : dict[int, WaveData] = {
 
     6 : {
         'enemies' : {
-            'basic' : 7,
-            'elite' : 6,
-            'gunner' : 4
+            'basic' : 9,
+            'elite' : 8,
+            'gunner' : 5
         },
         "spawn_cooldown" : 1.25,
         "spawn_rate_penalty_per_enemy" : 0.25,
@@ -134,9 +134,9 @@ WAVE_DATA : dict[int, WaveData] = {
 
     7 : {
         'enemies' : {
-            'basic' : 4,
-            'elite' : 8,
-            'gunner' : 5
+            'basic' : 6,
+            'elite' : 12,
+            'gunner' : 7
         },
         "spawn_cooldown" : 1.20,
         "spawn_rate_penalty_per_enemy" : 0.2,
@@ -145,9 +145,9 @@ WAVE_DATA : dict[int, WaveData] = {
 
     8 : {
         'enemies' : {
-            'basic' : 4,
-            'elite' : 10,
-            'gunner' : 5
+            'basic' : 6,
+            'elite' : 15,
+            'gunner' : 7
         },
         "spawn_cooldown" : 1.0,
         "spawn_rate_penalty_per_enemy" : 0.2,
@@ -156,9 +156,9 @@ WAVE_DATA : dict[int, WaveData] = {
 
     9 : {
         'enemies' : {
-            'basic' : 6,
-            'elite' : 11,
-            'gunner' : 5
+            'basic' : 9,
+            'elite' : 16,
+            'gunner' : 7
         },
         "spawn_cooldown" : 1.0,
         "spawn_rate_penalty_per_enemy" : 0.15,
@@ -167,13 +167,78 @@ WAVE_DATA : dict[int, WaveData] = {
 
     10 : {
         'enemies' : {
-            'basic' : 6,
-            'elite' : 13,
-            'gunner' : 6
+            'basic' : 9,
+            'elite' : 19,
+            'gunner' : 8
         },
         "spawn_cooldown" : 0.9,
         "spawn_rate_penalty_per_enemy" : 0.15,
-        'bosses' : ['golden_boss']
+        'bosses' : []
+    },
+
+    11 : {
+        'enemies' : {
+            'basic' : 10,
+            'elite' : 20,
+            'gunner' : 10,
+            'basic_boss' : 1
+        },
+        "spawn_cooldown" : 0.9,
+        "spawn_rate_penalty_per_enemy" : 0.15,
+        'bosses' : []
+    },
+
+    12 : {
+        'enemies' : {
+            'basic' : 12,
+            'elite' : 24,
+            'gunner' : 12,
+            'basic_boss' : 1
+        },
+        "spawn_cooldown" : 0.85,
+        "spawn_rate_penalty_per_enemy" : 0.12,
+        'bosses' : []
+    },
+
+
+    13 : {
+        'enemies' : {
+            'basic' : 14,
+            'elite' : 28,
+            'gunner' : 14,
+            'basic_boss' : 1,
+            'golden_boss' : 1
+        },
+        "spawn_cooldown" : 0.8,
+        "spawn_rate_penalty_per_enemy" : 0.09,
+        'bosses' : []
+    },
+
+
+    14 : {
+        'enemies' : {
+            'basic' : 16,
+            'elite' : 32,
+            'gunner' : 16,
+            'basic_boss' : 1,
+            'golden_boss' : 1
+        },
+        "spawn_cooldown" : 0.75,
+        "spawn_rate_penalty_per_enemy" : 0.06,
+        'bosses' : []
+    },
+
+    15 : {
+        'enemies' : {
+            'basic' : 18,
+            'elite' : 36,
+            'gunner' : 18,
+            'basic_boss' : 1,
+            'golden_boss' : 1
+        },
+        "spawn_cooldown" : 0.7,
+        "spawn_rate_penalty_per_enemy" : 0.03,
+        'bosses' : []
     },
 }
 
@@ -249,11 +314,17 @@ class MainGameState(NormalGameState):
         if self.player.current_hp <= 0:
             self.transition_to_gameover()
         if self.control_script.is_over:
-            self.transition_to_shop()
+            if self.wave_number >= 15:
+                self.trasition_to_win()
+            else:
+                self.transition_to_shop()
         
 
     def transition_to_gameover(self):
         self.game.state = GameOverGameState(self.game, prev_state=self)
+    
+    def trasition_to_win(self):
+        self.game.state = GameOverGameState(self.game, "You win!", prev_state=self)
     
     def transition_to_shop(self):
         self.game.state = ShopGameState(self.game, self.wave_number, self)
@@ -312,13 +383,21 @@ class BasicWaveControlScript(CoroutineScript):
         return choices(list(enemy_dict.keys()), list(enemy_dict.values()))[0]
     
     @staticmethod
-    def spawn_enemy(enemy_type : "EnemyType", x_level : int):
+    def spawn_enemy(enemy_type : Union["EnemyType", "BossType"], x_level : int):
         if enemy_type == EnemyTypes.BASIC.value:
             BasicEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
         elif enemy_type == EnemyTypes.ELITE.value:
             EliteEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
         elif enemy_type == EnemyTypes.GUNNER.value:
             GunnerEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
+        elif enemy_type == BossTypes.BASIC_BOSS.value:
+            boss = BasicBoss.spawn()
+            boss.max_hp = boss.max_hp // 3
+            boss.health = boss.max_hp
+        elif enemy_type == BossTypes.GOLDEN_BOSS.value:
+            boss = GoldenBoss.spawn()
+            boss.max_hp = boss.max_hp // 3
+            boss.health = boss.max_hp
         else:
             core_object.log(f"Enemy type '{enemy_type}' not found!")
     
@@ -339,7 +418,7 @@ class BasicWaveControlScript(CoroutineScript):
         centerx, centery = screen_sizex // 2, screen_sizey // 2
 
         wave_data : WaveData = WAVE_DATA[wave_number]
-        enemies : dict[EnemyType, int] = wave_data["enemies"].copy()
+        enemies : dict[EnemyType|BossType, int] = wave_data["enemies"].copy()
         spawn_cooldown : float = wave_data["spawn_cooldown"]
         spawn_rate_penalty_per_enemy : float = wave_data["spawn_rate_penalty_per_enemy"]
         bosses : list[BossType] = wave_data['bosses'].copy()
@@ -351,7 +430,7 @@ class BasicWaveControlScript(CoroutineScript):
         while any(enemies[k] > 0 for k in enemies):
             if enemy_spawn_timer.isover():
                 enemy_spawn_timer.set_duration(spawn_cooldown + spawn_rate_penalty_per_enemy * len(BaseEnemy.active_elements))
-                enemy_type_chosen : EnemyType = BasicWaveControlScript.pick_random_enemy(enemies)
+                enemy_type_chosen : EnemyType|BossType = BasicWaveControlScript.pick_random_enemy(enemies)
                 enemies[enemy_type_chosen] -= 1
                 BasicWaveControlScript.spawn_enemy(enemy_type_chosen, random.randint(100, screen_sizex - 100))
             if pygame.key.get_pressed()[pygame.K_l]:
@@ -428,7 +507,7 @@ class ShopGameState(NormalGameState):
             candidates = {
                 'AllDamageMultiplier' : 0.5,
                 'AllFirerateMultiplier' : 0.5,
-                'AlternateFireType' : random.choice([AlternateFireTypes.SHOTGUN.value])
+                'AlternateFireType' : [AlternateFireTypes.SHOTGUN.value, AlternateFireTypes.ROCKET.value][self.finished_wave // 5 - 1]
             }
         if self.prev.player.current_hp == self.prev.player.max_hp:
             if 'HealHealth' in candidates:
@@ -491,7 +570,7 @@ class ShopGameState(NormalGameState):
             self.transition_to_main()
     
     def transition_to_main(self):
-        self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1) if self.finished_wave < 10 else GameOverGameState(self.game, "You win!", self.prev)
+        self.game.state = MainGameState(self.game, self.prev, self.finished_wave + 1)
     
     def cleanup(self):
         self.prev.cleanup()
@@ -779,6 +858,11 @@ def runtime_imports():
     import src.sprites.bosses
     from src.sprites.bosses import BasicBoss, BaseBoss, GoldenBoss
     src.sprites.bosses.runtime_imports()
+
+    global BaseProjectile
+    import src.sprites.projectiles
+    from src.sprites.projectiles import BaseProjectile
+    src.sprites.projectiles.runtime_imports()
 
 class NetworkTestGameState(NormalGameState):
     def __init__(self, game_object : 'Game'):

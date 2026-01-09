@@ -27,7 +27,7 @@ class BaseEnemy(Sprite):
     enemy_hit_sfx.set_volume(0.41)
     enemy_killed_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/enemy_killed2.ogg")
     enemy_killed_sfx.set_volume(0.50)
-
+    KILL_SCORE : int = 5
     def __init__(self) -> None:
         super().__init__()
         self.type : EnemyType|BossType
@@ -57,6 +57,11 @@ class BaseEnemy(Sprite):
 
     def give_score(self, score : int):
         pygame.event.post(pygame.Event(SCORE_EVENT, {'score' : score}))
+    
+    def take_damage(self, damage : float):
+        if self.invincible: return
+        self.health -= damage
+        core_object.log(f"{self.type.capitalize()} enemy took {damage} damage")
 
     def when_hit(self, proj):
         self.kill_instance_safe()
@@ -66,6 +71,9 @@ class BaseEnemy(Sprite):
         if colliding_projectiles:
             for elem in colliding_projectiles:
                 self.when_hit(elem)
+                if isinstance(elem, HomingProjectile):
+                    if elem.explosive_range:
+                        elem.explode(self)
                 elem.kill_instance()
                 if self._zombie:
                     break
@@ -95,6 +103,7 @@ class BasicEnemy(BaseNormalEnemy):
     linked_classes : list['Sprite'] = [Sprite, BaseEnemy, BaseNormalEnemy]
     BASE_SPEED : float = 4.0
     APPROCH_RATE : int = 100
+    KILL_SCORE : int = 5
     def __init__(self):
         super().__init__()
         self.control_script : BasicEnemyControlScript
@@ -224,6 +233,8 @@ class EliteEnemy(BaseNormalEnemy):
 
     elite_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/enemy/elite_enemy.png", (0, 255, 0))
 
+    KILL_SCORE : int = 10
+
     def __init__(self):
         super().__init__()
         self.control_script : EliteEnemyControlScript
@@ -349,7 +360,7 @@ class GunnerEnemy(BaseNormalEnemy):
     BASE_SPEED : float = 3.0
 
     gunner_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/enemy/gunner_enemy.png", (0, 255, 0))
-
+    KILL_SCORE : int = 10
     def __init__(self):
         super().__init__()
         self.control_script : GunnerEnemyControlScript

@@ -5,6 +5,8 @@ from framework.utils.pivot_2d import Pivot2D
 from framework.utils.helpers import sign, load_alpha_to_colorkey, ColorType
 from enum import Enum
 from inspect import isclass
+from typing import Union
+from framework.utils.particle_effects import ParticleEffect
 
 class Teams(Enum):
     PACIFIST = "Pacifist"
@@ -188,6 +190,8 @@ class HomingProjectile(BaseProjectile):
         self.homing_targets : list[list[Sprite]|Sprite]
         self.dynamic_mask = True
         self.angle_offset : float
+        self.explosive_range : float
+        self.explosive_damage : float
         HomingProjectile.inactive_elements.append(self)
 
     @classmethod
@@ -196,7 +200,8 @@ class HomingProjectile(BaseProjectile):
               projectile_type : str = "", pivot_offset : pygame.Vector2|None = None,
               zindex : int = 0, homing_range : float = 1000, homing_rate : float = 3, 
               homing_targets : list[list[Sprite]|Sprite]|None = None, damage : float = 1, 
-              can_destroy : bool = False, destructible : bool = False, die_after_destroying : bool = True):
+              can_destroy : bool = False, destructible : bool = False, die_after_destroying : bool = True,
+              explosive_range : float = 0, explosion_damage : float = 0):
         if homing_targets is None: homing_targets = []
         if not isinstance(homing_targets, list):
             homing_targets = [homing_targets]
@@ -231,8 +236,37 @@ class HomingProjectile(BaseProjectile):
 
         element.angle = angle_offset + (element.get_velocity_orientation() or 0)
 
+        element.explosive_range = explosive_range
+        element.explosive_damage = explosion_damage
+
         cls.unpool(element)
         return element
+    
+    def explode(self, hit : Union["BaseEnemy", "Player"]):
+        overlap_point : tuple[int, int] = self.mask.overlap(self.mask, (self.rect.x - hit.rect.x, self.rect.y - hit.rect.y)) or (self.rect.width // 2, self.rect.height // 2)
+        point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
+    
+        if self.team == Teams.ALLIED or self.team == Teams.FFA:
+            for enemy in BaseEnemy.active_elements:
+                if enemy == hit:
+                    continue
+                if (self.position - enemy.position).magnitude() < self.explosive_range:
+                    enemy.take_damage(self.explosive_damage)
+                    enemy.give_score(1)
+                    if enemy.health < 0:
+                        enemy.kill_instance_safe()
+                        enemy.give_score(enemy.KILL_SCORE)
+                        ParticleEffect.load_effect('enemy_killed').play(enemy.position, core_object.game.game_timer.get_time)
+                        core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
+                    else:
+                        ParticleEffect.load_effect('enemy_damaged').play(enemy.position, core_object.game.game_timer.get_time)
+                        core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
+        if self.team == Teams.ENEMY or self.team == Teams.FFA:
+            for player in Player.active_elements:
+                if player == hit:
+                    continue
+                if (self.position - player.position).magnitude() < self.explosive_range:
+                    player.take_damage(self.explosive_damage)
     
     def update(self, delta : float):
         if self._zombie:
@@ -292,6 +326,13 @@ class HomingProjectile(BaseProjectile):
     
     def clean_instance(self):
         super().clean_instance()
+        self.homing_range = None
+        self.homing_rate = None
+        self.homing_targets = None
+        self.dynamic_mask = None
+        self.angle_offset = None
+        self.explosive_range = None
+        self.explosive_damage = None
 
 Sprite.register_class(BaseProjectile)
 Sprite.register_class(NormalProjectile)
@@ -301,6 +342,16 @@ for _ in range(200):
 
 for _ in range(50):
     HomingProjectile()
+
+def runtime_imports():
+    global src
+    global BaseEnemy
+    import src.sprites.enemy
+    from src.sprites.enemy import BaseEnemy
+
+    global Player
+    import src.sprites.player
+    from src.sprites.player import Player
 
 
 def make_connections():

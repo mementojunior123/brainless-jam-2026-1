@@ -16,6 +16,7 @@ from framework.utils.particle_effects import ParticleEffect, ParticleEffectTrack
 class AlternateFireTypes(Enum):
     LAZER = 0
     SHOTGUN = 1
+    ROCKET = 2
 
 UpgradeType : TypeAlias = Literal['RegularDamageBonus', 'SpecialDamageMultipler', 'AllDamageMultiplier',
                                   'RegularFirerateMultiplier', 'SpecialFirerateMultiplier', 'AllFirerateMultiplier',
@@ -32,14 +33,20 @@ alternate_fire_base_stats : dict[int, AlternateFireBaseStatLine] = {
         'damage' : 4,
         'firerate' : 1.0,
         'name' : 'Lazer',
-        'description' : 'a lazer type weapon'
+        'description' : 'A lazer that deals\nhigh damage'
     },
 
     AlternateFireTypes.SHOTGUN.value : {
         'damage' : 1.5,
         'firerate' : 0.5,
         'name' : 'Shotgun',
-        'description' : 'a shotgun type weapon'
+        'description' : 'A shotgun that fires\n5 pellets'
+    },
+    AlternateFireTypes.ROCKET.value : {
+        'damage' : 4,
+        'firerate' : 0.4,
+        'name' : 'Missile',
+        'description' : 'A heat-seeking missile\n that deals AOE damage'
     }
 }
 
@@ -135,9 +142,9 @@ class Player(Sprite):
             'SpecialFirerateMultiplier' : 1,
             'AllFirerateMultiplier' : 1,
 
-            'AlternateFireType' : AlternateFireTypes.LAZER.value,
-            'AlternateFireBaseDamage' : alternate_fire_base_stats[AlternateFireTypes.LAZER.value]['damage'],
-            'AlternateFireBaseFireRate' :alternate_fire_base_stats[AlternateFireTypes.LAZER.value]['firerate'],
+            'AlternateFireType' : AlternateFireTypes.ROCKET.value,
+            'AlternateFireBaseDamage' : alternate_fire_base_stats[AlternateFireTypes.ROCKET.value]['damage'],
+            'AlternateFireBaseFireRate' : alternate_fire_base_stats[AlternateFireTypes.ROCKET.value]['firerate'],
             
             'MaxHealthBonus' : 0,
         }
@@ -312,6 +319,8 @@ class Player(Sprite):
                 return self.fire_lazer(special_damage)
             case AlternateFireTypes.SHOTGUN.value:
                 return (self.fire_shotgun(special_damage))[2]
+            case AlternateFireTypes.ROCKET.value:
+                return self.fire_rocket(special_damage)
             case _:
                 core_object.log(f"Alternate fire type {self.upgrades['AlternateFireType']} does not exist")
                 return None
@@ -332,6 +341,14 @@ class Player(Sprite):
                         damage=damage, can_destroy=True)
             )
         return proj_list
+    
+    def fire_rocket(self, damage : float) -> HomingProjectile:
+        return HomingProjectile.spawn(self.position + pygame.Vector2(0, -30), 
+                                      pygame.Vector2(0, -10), 
+                                      None, None, 0,
+        BaseProjectile.rocket_image, homing_range=300, homing_rate=3,
+        homing_targets=BaseEnemy, team=Teams.ALLIED, can_destroy=True, damage=damage, die_after_destroying=False,
+        explosion_damage=damage/2, explosive_range=250)
     
     def take_damage(self, damage : float):
         if ((not self.invuln_timer.isover()) 
