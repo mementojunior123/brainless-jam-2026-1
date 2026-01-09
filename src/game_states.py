@@ -392,11 +392,11 @@ class BasicWaveControlScript(CoroutineScript):
             GunnerEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
         elif enemy_type == BossTypes.BASIC_BOSS.value:
             boss = BasicBoss.spawn()
-            boss.max_hp = boss.max_hp // 3
+            boss.max_hp = boss.max_hp // 1.5
             boss.health = boss.max_hp
         elif enemy_type == BossTypes.GOLDEN_BOSS.value:
             boss = GoldenBoss.spawn()
-            boss.max_hp = boss.max_hp // 3
+            boss.max_hp = boss.max_hp // 2
             boss.health = boss.max_hp
         else:
             core_object.log(f"Enemy type '{enemy_type}' not found!")

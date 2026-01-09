@@ -69,7 +69,7 @@ class BasicBoss(BaseBoss):
         element.current_camera = core_object.game.main_camera
 
         element.type = 'basic'
-        element.max_hp = 50
+        element.max_hp = 60
         element.health = element.max_hp
         element.health_bar = element.create_healthbar_visual()
         element.update_healthbar_visual()

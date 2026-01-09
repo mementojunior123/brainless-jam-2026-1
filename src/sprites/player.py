@@ -44,7 +44,7 @@ alternate_fire_base_stats : dict[int, AlternateFireBaseStatLine] = {
     },
     AlternateFireTypes.ROCKET.value : {
         'damage' : 4,
-        'firerate' : 0.4,
+        'firerate' : 0.3,
         'name' : 'Missile',
         'description' : 'A heat-seeking missile\n that deals AOE damage'
     }
