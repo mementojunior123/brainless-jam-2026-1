@@ -1,2 +1,8 @@
 Version J01 (07-01-2026, 21:40):
     -The first fully playable version of the game
+
+Version J02 (08-01-2026, 20:05):
+    -Added a new boss
+    -Added a new alternate fire
+    -Made a few QOL adjustments
+    -Made a few balance changes
