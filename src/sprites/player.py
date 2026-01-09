@@ -142,9 +142,9 @@ class Player(Sprite):
             'SpecialFirerateMultiplier' : 1,
             'AllFirerateMultiplier' : 1,
 
-            'AlternateFireType' : AlternateFireTypes.ROCKET.value,
-            'AlternateFireBaseDamage' : alternate_fire_base_stats[AlternateFireTypes.ROCKET.value]['damage'],
-            'AlternateFireBaseFireRate' : alternate_fire_base_stats[AlternateFireTypes.ROCKET.value]['firerate'],
+            'AlternateFireType' : AlternateFireTypes.LAZER.value,
+            'AlternateFireBaseDamage' : alternate_fire_base_stats[AlternateFireTypes.LAZER.value]['damage'],
+            'AlternateFireBaseFireRate' : alternate_fire_base_stats[AlternateFireTypes.LAZER.value]['firerate'],
             
             'MaxHealthBonus' : 0,
         }
