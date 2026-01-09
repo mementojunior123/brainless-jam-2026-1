@@ -6,3 +6,6 @@ Version J02 (08-01-2026, 20:05):
     -Added a new alternate fire
     -Made a few QOL adjustments
     -Made a few balance changes
+
+Version J03 (08-01-2026, 20:50):
+    -Made a few balance changes
