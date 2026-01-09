@@ -348,7 +348,7 @@ class Player(Sprite):
                                       None, None, 0,
         BaseProjectile.rocket_image, homing_range=300, homing_rate=3,
         homing_targets=BaseEnemy, team=Teams.ALLIED, can_destroy=True, damage=damage, die_after_destroying=False,
-        explosion_damage=damage/2, explosive_range=250)
+        explosion_damage=damage * 0.67, explosive_range=250)
     
     def take_damage(self, damage : float):
         if ((not self.invuln_timer.isover()) 
