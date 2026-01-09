@@ -490,25 +490,26 @@ class ShopGameState(NormalGameState):
 
     def pick_candidates(self, count : int = 3) -> dict["UpgradeType", float|int]:
         candidates : dict[UpgradeType, float|int]
+        secion : int = (self.finished_wave - 1) // 5
         if self.finished_wave % 5 != 0:
             candidates = {
-                'RegularDamageBonus' : 0.4,
-                'SpecialDamageMultipler' : 0.3,
-                'AllDamageMultiplier' : 0.15,
+                'RegularDamageBonus' : [0.4, 0.4, 0.4][secion],
+                'SpecialDamageMultipler' : [0.3, 0.3, 0.3][secion],
+                'AllDamageMultiplier' : [0.15, 0.15, 0.15][secion],
 
-                'RegularFirerateMultiplier' : 0.2,
-                'SpecialFirerateMultiplier' : 0.2,
-                'AllFirerateMultiplier' : 0.1,
+                'RegularFirerateMultiplier' : [0.2, 0.2, 0.2][secion],
+                'SpecialFirerateMultiplier' : [0.2, 0.2, 0.2][secion],
+                'AllFirerateMultiplier' : [0.1, 0.1, 0.1][secion],
 
                 'MaxHealthBonus' : 1,
-                'HealHealth' : 2,
+                'HealHealth' : [2, 2, 3][secion],
                 'DashRechargeRate' : 0.25,
             }
         else:
             candidates = {
                 'AllDamageMultiplier' : 0.5,
                 'AllFirerateMultiplier' : 0.5,
-                'AlternateFireType' : [AlternateFireTypes.SHOTGUN.value, AlternateFireTypes.ROCKET.value][self.finished_wave // 5 - 1]
+                'AlternateFireType' : [AlternateFireTypes.SHOTGUN.value, AlternateFireTypes.ROCKET.value][secion]
             }
         if self.prev.player.current_hp == self.prev.player.max_hp:
             if 'HealHealth' in candidates:
