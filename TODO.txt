@@ -11,6 +11,7 @@ You also get major upgrades right before the final boss
 -Add more natural alerts instead of Game.alert_player()
 -Improve weapon descriptions and make sure they are up to date
 -Clarify some things about how the game works (dashing giving i-frames, upgrades applying to future alternate fires, etc.)
+-Remove some player ui elements on player death
 
 -Do balancing and add more content
     Weapon specialist upgrade : You can choose to upgrade your alternate fire instead of picking a new one in major upgrades

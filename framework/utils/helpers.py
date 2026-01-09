@@ -187,3 +187,13 @@ def recolor_image(img : pygame.Surface, new_color : ColorType) -> pygame.Surface
 def recolor_image_ip(img : pygame.Surface, new_color : ColorType) -> None:
     img_mask : pygame.Mask = pygame.mask.from_surface(img)
     img.blit(img_mask.to_surface(setcolor=new_color, unsetcolor=img.get_colorkey()))
+
+def remove_image_empty(img : pygame.Surface) -> pygame.Surface:
+    bounding_box : pygame.Rect = img.get_bounding_rect()
+    new_surf : pygame.Surface = pygame.Surface(bounding_box.size)
+    colorkey = img.get_colorkey()
+    if colorkey:
+        new_surf.set_colorkey(colorkey)
+        new_surf.fill(colorkey)
+    new_surf.blit(img, (0, 0), area = bounding_box)
+    return new_surf

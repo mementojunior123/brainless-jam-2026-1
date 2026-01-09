@@ -63,8 +63,20 @@ class BaseEnemy(Sprite):
         self.health -= damage
         core_object.log(f"{self.type.capitalize()} enemy took {damage} damage")
 
-    def when_hit(self, proj):
-        self.kill_instance_safe()
+    def when_hit(self, projectile : BaseProjectile):
+        self.take_damage(projectile.damage)
+        overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
+        point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
+        if self.health <= 0:
+            self.kill_instance_safe()
+            ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
+            core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
+            self.give_score(self.KILL_SCORE)
+        elif not self.invincible:
+            ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
+            core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
+            self.give_score(1)
+
 
     def check_collisions(self):
         colliding_projectiles : list[BaseProjectile] = [elem for elem in self.get_all_colliding(BaseProjectile) if elem.team in (Teams.ALLIED, Teams.FFA)]
@@ -111,7 +123,7 @@ class BasicEnemy(BaseNormalEnemy):
         BasicEnemy.inactive_elements.append(self)
     
     @classmethod
-    def spawn(cls, position_anchor : str, position : int|pygame.Vector2):
+    def spawn(cls, position_anchor : str, position : int|pygame.Vector2, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20):
         element = cls.inactive_elements[0]
 
         element.image = BaseEnemy.default_image2
@@ -126,7 +138,7 @@ class BasicEnemy(BaseNormalEnemy):
         element.invincible = False
 
         element.control_script = BasicEnemyControlScript()
-        element.control_script.initialize(core_object.game.game_timer.get_time, element)
+        element.control_script.initialize(core_object.game.game_timer.get_time, element, target_anchor, target_pos)
         element.speed = BasicEnemy.BASE_SPEED
 
         element.type = 'basic'
@@ -138,25 +150,6 @@ class BasicEnemy(BaseNormalEnemy):
     def update(self, delta: float):
         self.control_script.process_frame(delta)
         self.check_collisions()
-
-    def when_hit(self, projectile : BaseProjectile):
-        self.take_damage(projectile.damage)
-        overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
-        point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
-        if self.health <= 0:
-            self.kill_instance_safe()
-            ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
-            core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
-            self.give_score(5)
-        elif not self.invincible:
-            ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
-            core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
-            self.give_score(1)
-
-    def take_damage(self, damage : float):
-        if self.invincible: return
-        core_object.log(f"Basic enemy took damage : {damage}")
-        self.health -= damage
     
     def fire_homing_projectile(self) -> HomingProjectile:
         return HomingProjectile.spawn(self.position + pygame.Vector2(0, 30), pygame.Vector2(0, 5), None, None, 0,
@@ -173,8 +166,8 @@ class BasicEnemy(BaseNormalEnemy):
         self.speed = None
 
 class BasicEnemyControlScript(CoroutineScript):
-    def initialize(self, time_source : TimeSource, unit : BasicEnemy):
-        return super().initialize(time_source, unit)
+    def initialize(self, time_source : TimeSource, unit : BasicEnemy, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20):
+        return super().initialize(time_source, unit, target_anchor, target_pos)
     
     def type_hints(self):
         self.coro_attributes = []
@@ -183,16 +176,18 @@ class BasicEnemyControlScript(CoroutineScript):
         return super().process_frame(values)
     
     @staticmethod
-    def corou(time_source : TimeSource, unit : BasicEnemy) -> Generator[None, float, str]: #Yield, Send, Return
+    def corou(time_source : TimeSource, unit : BasicEnemy, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20) -> Generator[None, float, str]: #Yield, Send, Return
         
         screen_size = core_object.main_display.get_size()
         screen_sizex, screen_sizey = screen_size
         centerx, centery = screen_sizex // 2, screen_sizey // 2
 
-        
-        target_position : pygame.Vector2 = unit.position.copy()
-        unit.move_rect("bottom", -20)
         start_position : pygame.Vector2 = unit.position.copy()
+        unit.move_rect(target_anchor, target_pos)
+        target_position : pygame.Vector2 = unit.position.copy()
+        unit.position = start_position
+        
+        
         transition_timer : Timer = Timer(0.8, time_source)
         delta = yield
         unit.invincible = True
@@ -242,7 +237,7 @@ class EliteEnemy(BaseNormalEnemy):
         EliteEnemy.inactive_elements.append(self)
     
     @classmethod
-    def spawn(cls, position_anchor : str, position : int|pygame.Vector2):
+    def spawn(cls, position_anchor : str, position : int|pygame.Vector2, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20):
         element = cls.inactive_elements[0]
 
         element.image = EliteEnemy.elite_image
@@ -255,7 +250,7 @@ class EliteEnemy(BaseNormalEnemy):
         element.current_camera = core_object.game.main_camera
         element.invincible = False
         element.control_script = EliteEnemyControlScript()
-        element.control_script.initialize(core_object.game.game_timer.get_time, element)
+        element.control_script.initialize(core_object.game.game_timer.get_time, element, target_anchor, target_pos)
         element.speed = EliteEnemy.BASE_SPEED
 
         element.type = 'elite'
@@ -267,25 +262,6 @@ class EliteEnemy(BaseNormalEnemy):
     def update(self, delta: float):
         self.control_script.process_frame(delta)
         self.check_collisions()
-
-    def when_hit(self, projectile : BaseProjectile):
-        self.take_damage(projectile.damage)
-        overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
-        point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
-        if self.health <= 0:
-            self.kill_instance_safe()
-            ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
-            core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
-            self.give_score(10)
-        elif not self.invincible:
-            ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
-            core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
-            self.give_score(1)
-    
-    def take_damage(self, damage : float):
-        if self.invincible: return
-        core_object.log(f"Elite enemy took damage : {damage}")
-        self.health -= damage
     
     def fire_homing_projectile(self) -> HomingProjectile:
         return HomingProjectile.spawn(self.position + pygame.Vector2(0, 30), pygame.Vector2(0, 8), None, None, 0,
@@ -302,8 +278,8 @@ class EliteEnemy(BaseNormalEnemy):
         self.speed = None
 
 class EliteEnemyControlScript(CoroutineScript):
-    def initialize(self, time_source : TimeSource, unit : EliteEnemy):
-        return super().initialize(time_source, unit)
+    def initialize(self, time_source : TimeSource, unit : EliteEnemy, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20):
+        return super().initialize(time_source, unit, target_anchor, target_pos)
     
     def type_hints(self):
         self.coro_attributes = []
@@ -312,16 +288,16 @@ class EliteEnemyControlScript(CoroutineScript):
         return super().process_frame(values)
     
     @staticmethod
-    def corou(time_source : TimeSource, unit : EliteEnemy) -> Generator[None, float, str]: #Yield, Send, Return
+    def corou(time_source : TimeSource, unit : EliteEnemy, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20) -> Generator[None, float, str]: #Yield, Send, Return
         
         screen_size = core_object.main_display.get_size()
         screen_sizex, screen_sizey = screen_size
         centerx, centery = screen_sizex // 2, screen_sizey // 2
 
-        
-        target_position : pygame.Vector2 = unit.position.copy()
-        unit.move_rect("bottom", -20)
         start_position : pygame.Vector2 = unit.position.copy()
+        unit.move_rect(target_anchor, target_pos)
+        target_position : pygame.Vector2 = unit.position.copy()
+        unit.position = start_position
         transition_timer : Timer = Timer(0.8, time_source)
         delta = yield
         unit.invincible = True
@@ -368,7 +344,7 @@ class GunnerEnemy(BaseNormalEnemy):
         GunnerEnemy.inactive_elements.append(self)
     
     @classmethod
-    def spawn(cls, position_anchor : str, position : int|pygame.Vector2):
+    def spawn(cls, position_anchor : str, position : int|pygame.Vector2, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20):
         element = cls.inactive_elements[0]
 
         element.image = GunnerEnemy.gunner_image
@@ -381,7 +357,7 @@ class GunnerEnemy(BaseNormalEnemy):
         element.current_camera = core_object.game.main_camera
         element.invincible = False
         element.control_script = GunnerEnemyControlScript()
-        element.control_script.initialize(core_object.game.game_timer.get_time, element)
+        element.control_script.initialize(core_object.game.game_timer.get_time, element, target_anchor, target_pos)
         element.speed = GunnerEnemy.BASE_SPEED
 
         element.type = 'gunner'
@@ -393,25 +369,6 @@ class GunnerEnemy(BaseNormalEnemy):
     def update(self, delta: float):
         self.control_script.process_frame(delta)
         self.check_collisions()
-
-    def when_hit(self, projectile : BaseProjectile):
-        self.take_damage(projectile.damage)
-        overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
-        point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
-        if self.health <= 0:
-            self.kill_instance_safe()
-            ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
-            core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
-            self.give_score(10)
-        elif not self.invincible:
-            ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
-            core_object.bg_manager.play_sfx(BaseEnemy.enemy_hit_sfx, 1.0)
-            self.give_score(1)
-    
-    def take_damage(self, damage : float):
-        if self.invincible: return
-        core_object.log(f"Gunner enemy took damage : {damage}")
-        self.health -= damage
     
     def fire_homing_projectile(self) -> HomingProjectile:
         return HomingProjectile.spawn(self.position + pygame.Vector2(0, 30), pygame.Vector2(0, 7), None, None, 0,
@@ -428,8 +385,8 @@ class GunnerEnemy(BaseNormalEnemy):
         self.speed = None
 
 class GunnerEnemyControlScript(CoroutineScript):
-    def initialize(self, time_source : TimeSource, unit : GunnerEnemy):
-        return super().initialize(time_source, unit)
+    def initialize(self, time_source : TimeSource, unit : GunnerEnemy, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20):
+        return super().initialize(time_source, unit, target_anchor, target_pos)
     
     def type_hints(self):
         self.coro_attributes = []
@@ -438,15 +395,16 @@ class GunnerEnemyControlScript(CoroutineScript):
         return super().process_frame(values)
     
     @staticmethod
-    def corou(time_source : TimeSource, unit : GunnerEnemy):
+    def corou(time_source : TimeSource, unit : GunnerEnemy, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20) -> Generator[None, float, str]: #Yield, Send, Return
+        
         screen_size = core_object.main_display.get_size()
         screen_sizex, screen_sizey = screen_size
         centerx, centery = screen_sizex // 2, screen_sizey // 2
-        bounding_box : pygame.Rect = pygame.Rect(0, 0, screen_sizex, screen_sizey)
-        
-        target_position : pygame.Vector2 = unit.position.copy()
-        unit.move_rect("bottom", -20)
+
         start_position : pygame.Vector2 = unit.position.copy()
+        unit.move_rect(target_anchor, target_pos)
+        target_position : pygame.Vector2 = unit.position.copy()
+        unit.position = start_position
         transition_timer : Timer = Timer(0.8, time_source)
         delta = yield
         unit.invincible = True
@@ -596,8 +554,9 @@ EnemyType : TypeAlias = Literal['basic', 'elite', 'gunner']
 class BossTypes(Enum):
     BASIC_BOSS = 'basic_boss'
     GOLDEN_BOSS = 'golden_boss'
+    SPACESHIP_BOSS = 'spaceship_boss'
 
-BossType : TypeAlias = Literal['basic_boss', 'golden_boss']
+BossType : TypeAlias = Literal['basic_boss', 'golden_boss', 'spaceship_boss']
 
 def runtime_imports():
     global Player, src

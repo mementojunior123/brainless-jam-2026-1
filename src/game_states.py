@@ -237,7 +237,7 @@ WAVE_DATA : dict[int, WaveData] = {
         },
         "spawn_cooldown" : 0.8,
         "spawn_rate_penalty_per_enemy" : 0.08,
-        'bosses' : []
+        'bosses' : ['spaceship_boss']
     },
 }
 
@@ -259,7 +259,7 @@ class MainGameState(NormalGameState):
         self._score = new_val
         self.score_sprite.text = f"Score : {self._score}"
 
-    def __init__(self, game_object : "Game", prev_main_state : Union["MainGameState", None] = None, wave_num : int = 1):
+    def __init__(self, game_object : "Game", prev_main_state : Union["MainGameState", None] = None, wave_num : int = 14):
         self.game : Game = game_object
         self.player : Player
         self.screen_size : tuple[int, int]
@@ -384,11 +384,11 @@ class BasicWaveControlScript(CoroutineScript):
     @staticmethod
     def spawn_enemy(enemy_type : Union["EnemyType", "BossType"], x_level : int):
         if enemy_type == EnemyTypes.BASIC.value:
-            BasicEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
+            BasicEnemy.spawn("midbottom", pygame.Vector2(x_level, -20))
         elif enemy_type == EnemyTypes.ELITE.value:
-            EliteEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
+            EliteEnemy.spawn("midbottom", pygame.Vector2(x_level, -20))
         elif enemy_type == EnemyTypes.GUNNER.value:
-            GunnerEnemy.spawn("midtop", pygame.Vector2(x_level, 20))
+            GunnerEnemy.spawn("midbottom", pygame.Vector2(x_level, -20))
         elif enemy_type == BossTypes.BASIC_BOSS.value:
             boss = BasicBoss.spawn()
             boss.max_hp = boss.max_hp // 1.5
@@ -396,6 +396,10 @@ class BasicWaveControlScript(CoroutineScript):
         elif enemy_type == BossTypes.GOLDEN_BOSS.value:
             boss = GoldenBoss.spawn()
             boss.max_hp = boss.max_hp // 2
+            boss.health = boss.max_hp
+        elif enemy_type == BossTypes.SPACESHIP_BOSS.value:
+            boss = SpaceshipBoss.spawn()
+            boss.max_hp = boss.max_hp // 3
             boss.health = boss.max_hp
         else:
             core_object.log(f"Enemy type '{enemy_type}' not found!")
@@ -407,6 +411,8 @@ class BasicWaveControlScript(CoroutineScript):
             return BasicBoss.spawn()
         elif boss_type == 'golden_boss':
             return GoldenBoss.spawn()
+        elif boss_type == 'spaceship_boss':
+            return SpaceshipBoss.spawn()
         else:
             core_object.log(f"Enemy type '{boss_type}' not found")
     
@@ -874,9 +880,9 @@ def runtime_imports():
     from src.sprites.enemy import BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType, BossTypes, BossType
     src.sprites.enemy.runtime_imports()
 
-    global BasicBoss, BaseBoss, GoldenBoss
+    global BasicBoss, BaseBoss, GoldenBoss, SpaceshipBoss
     import src.sprites.bosses
-    from src.sprites.bosses import BasicBoss, BaseBoss, GoldenBoss
+    from src.sprites.bosses import BasicBoss, BaseBoss, GoldenBoss, SpaceshipBoss
     src.sprites.bosses.runtime_imports()
 
     global BaseProjectile
