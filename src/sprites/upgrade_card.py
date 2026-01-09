@@ -33,7 +33,7 @@ class UpgradeCard(Sprite):
         return pygame.Font('assets/fonts/Pixeltype.ttf', size)
 
     @classmethod
-    def spawn(cls, x_pos : int, text_lines : list[tuple[str, int, int|str, ColorType]]) -> "UpgradeCard":
+    def spawn(cls, x_pos : int, text_lines : list[tuple[str, int, int|str, ColorType]], special : bool = False) -> "UpgradeCard":
         """
         text_tuple is a tuple of the text, y_level (relative to card.top), size
         """
@@ -61,7 +61,8 @@ class UpgradeCard(Sprite):
             text_image : pygame.Surface = TextSprite((0, 0), 'center', -1, text, text_settings=(font_used, text_color, False),
                                                   text_stroke_settings=('Black', text_stroke_size), colorkey=(0, 255, 255)).surf
             element.image.blit(text_image, text_image.get_rect(center=(card_width // 2, y_level)))
-            
+        if special:
+            pygame.draw.rect(element.image, "#ffd700", element.image.get_rect(), width=10)
         element.rect = element.image.get_rect()
 
         element.position = pygame.Vector2(0, 0)

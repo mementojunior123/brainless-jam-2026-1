@@ -10,7 +10,7 @@ pygame.display.set_icon(GAME_ICON)
 window_size = (960, 540)
 window = pygame.display.set_mode(window_size)
 
-pygame.mixer.set_num_channels(32)
+pygame.mixer.set_num_channels(64)
 
 from framework.core.core import Core, core_object
 import src.settings as settings_module

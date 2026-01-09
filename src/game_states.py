@@ -16,7 +16,7 @@ from framework.utils.my_timer import Timer, TimeSource
 from framework.game.sprite import Sprite
 from framework.utils.helpers import average, random_float, ColorType
 from framework.utils.ui.brightness_overlay import BrightnessOverlay
-from framework.utils.particle_effects import ParticleEffect
+from framework.utils.particle_effects import ParticleEffect, Particle
 
 class GameState:
     def __init__(self, game_object : 'Game'):
@@ -244,7 +244,7 @@ WAVE_DATA : dict[int, WaveData] = {
 SCORE_EVENT = pygame.event.custom_type()
 
 class MainGameState(NormalGameState):
-    main_theme : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/music/theme2_trimmed_lazy.ogg")
+    main_theme : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/music/theme2_trimmed_good.ogg")
     main_theme.set_volume(0.2)
 
     boss_theme : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/music/theme1.ogg")
@@ -484,6 +484,7 @@ class ShopGameState(NormalGameState):
         self.finished_wave : int = finished_wave
         self.control_script : ShopControlScript = ShopControlScript()
         self.candidates : dict["UpgradeType", float|int] = self.pick_candidates()
+        self.major_upgrade : bool = True if self.finished_wave % 5 == 0 else False
         self.control_script.initialize(self.game.game_timer.get_time, self.candidates, self.prev.player, self)
         self.game.alert_player("Shop entered!")
 
@@ -719,7 +720,8 @@ class ShopControlScript(CoroutineScript):
         cards : list[UpgradeCard] = []
         card_dict : dict[UpgradeType, UpgradeCard] = {}
         for pos, upgrade_type, upgrade_value in zip(x_positions, upgrades.keys(), upgrades.values()):
-            card = UpgradeCard.spawn(pos, ShopControlScript.format_card_text(upgrade_type, upgrade_value, player))
+            card = UpgradeCard.spawn(pos, ShopControlScript.format_card_text(upgrade_type, upgrade_value, player),
+                                     special=game_state.major_upgrade)
             cards.append(card)
             card_dict[upgrade_type] = card
         player.can_shoot = False
@@ -772,13 +774,15 @@ class ShopControlScript(CoroutineScript):
 class GameOverGameState(GameState):
     def __init__(self, game_object : "Game", text = "Game over!", prev_state : GameState|None = None):
         self.game : Game = game_object
+        self.lost : bool = text == "Game over!"
         self.control_script : GameOverControlScript = GameOverControlScript()
-        self.control_script.initialize(self.game.game_timer.get_time)
+        self.control_script.initialize(self.game.game_timer.get_time, self)
         self.game.alert_player(text)
         core_object.bg_manager.stop_all_music()
         self.prev = prev_state
 
     def main_logic(self, delta : float):
+        Particle.update_all(delta)
         self.control_script.process_frame(delta)
         if self.control_script.is_over:
             pygame.event.post(pygame.Event(core_object.END_GAME, {}))
@@ -787,8 +791,8 @@ class GameOverGameState(GameState):
         if self.prev: self.prev.cleanup()
 
 class GameOverControlScript(CoroutineScript):
-    def initialize(self, time_source : TimeSource):
-        return super().initialize(time_source)
+    def initialize(self, time_source : TimeSource, state : GameOverGameState):
+        return super().initialize(time_source, state)
     
     def type_hints(self):
         self.coro_attributes = []
@@ -797,10 +801,18 @@ class GameOverControlScript(CoroutineScript):
         return super().process_frame(values)
     
     @staticmethod
-    def corou(time_source : TimeSource) -> Generator[None, float, str]:
+    def corou(time_source : TimeSource, state : GameOverGameState) -> Generator[None, float, str]:
         timer : Timer = Timer(1, time_source)
         delta : float = yield
         if delta is None: delta = core_object.dt
+        while not timer.isover():
+            delta = yield
+        if not state.lost:
+            return "Done"
+        timer.set_duration(2)
+        core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
+        ParticleEffect.load_effect('boss_killed').play(Player.active_elements[0].position, timer.get_time)
+        Player.active_elements[0].kill_instance()
         while not timer.isover():
             delta = yield
         return "Done"
