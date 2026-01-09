@@ -8,7 +8,6 @@ You also get major upgrades right before the final boss
 -Add boss #3
 
 --High-- (Things I need to do before the end of the jam)
--Get a game title
 -Add a sound effect for enemies shooting
 -Game over sequence and win sequence
 -Add a separate card design for major upgrades
@@ -23,6 +22,8 @@ You also get major upgrades right before the final boss
     Grenade alternate fire
 
 --Medium-- (Things I will add if I have time to spare)
+-Artwork in the menu
+-Better cover for the game
 -Improve the player sprites/animation
 -Improve background sprite
 -Improve enemy sprite

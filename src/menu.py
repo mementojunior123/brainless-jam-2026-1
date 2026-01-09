@@ -84,7 +84,7 @@ class Menu(BaseMenu):
         
         self.stage_data : list[dict] = [None, {}, {}]
         self.stages = [None, 
-        [BaseUiElements.new_text_sprite('Game Title', (Menu.font_60, 'Black', False), 0, 'midtop', (centerx, 50)),
+        [BaseUiElements.new_text_sprite('Space Brawl', (Menu.font_60, 'Black', False), 0, 'midtop', (centerx, 50)),
         BaseUiElements.new_button('BlueButton', 'Play', 1, 'midbottom', (centerx, window_size[1] - 15), (0.5, 1.4), 
         {'name' : 'play_button'}, (Menu.font_40, 'Black', False)),
         BaseUiElements.new_text_sprite('A/D or arrow keys to move', (Menu.font_50, 'Black', False), 0, 'midleft', (15, centery - 75)),

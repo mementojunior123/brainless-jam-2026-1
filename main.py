@@ -4,7 +4,7 @@ import traceback
 pygame.init()
 
 GAME_ICON = pygame.image.load('template_icon.png')
-GAME_TITLE : str = "Test game title"
+GAME_TITLE : str = "Space Brawl"
 pygame.display.set_icon(GAME_ICON)
 
 window_size = (960, 540)
