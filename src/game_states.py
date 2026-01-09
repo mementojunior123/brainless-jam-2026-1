@@ -502,6 +502,7 @@ class ShopGameState(NormalGameState):
 
                 'MaxHealthBonus' : 1,
                 'HealHealth' : 2,
+                'DashRechargeRate' : 0.25,
             }
         else:
             candidates = {
@@ -541,6 +542,8 @@ class ShopGameState(NormalGameState):
                     player.current_hp = player.max_hp
             case 'HealMax':
                 player.current_hp = player.max_hp
+            case 'DashRechargeRate':
+                player.upgrades['DashRechargeRate'] += upgrade_value
             case 'MaxHealthBonus':
                 player.upgrades['MaxHealthBonus'] += upgrade_value
                 prev_max_hp : int = player.max_hp
@@ -659,6 +662,8 @@ class ShopControlScript(CoroutineScript):
                 new_special_firerate : float = player.get_special_firerate()
                 player.upgrades['SpecialFirerateMultiplier'] -= upgrade_value
                 return f"{old_firerate_damage:.2f}/s --> {new_special_firerate:.2f}/s"
+            case 'DashRechargeRate':
+                return f"{Player.DASH_COOLDOWN / player.upgrades['DashRechargeRate']:.2f}s --> {Player.DASH_COOLDOWN / (player.upgrades['DashRechargeRate'] + upgrade_value):.2f}s"
     
     @staticmethod
     def format_card_text(upgrade_type : "UpgradeType", upgrade_value : int|float, player : "Player") -> list[tuple[str, int, int|str, ColorType]]:
@@ -690,7 +695,10 @@ class ShopControlScript(CoroutineScript):
                 return [(f"Heal up to max HP", 50, DEFAULT_FONT_SIZE, "White")]
             case 'MaxHealthBonus':
                 return [(f"Increase max health\nby {upgrade_value}", 50, DEFAULT_FONT_SIZE, "White"),
-                        (improvement_text, 200, DEFAULT_FONT_SIZE, "Green")] 
+                        (improvement_text, 200, DEFAULT_FONT_SIZE, "Green")]
+            case 'DashRechargeRate':
+                return [(f"Increase dash\nrecharge rate by {upgrade_value:.0%}", 50, DEFAULT_FONT_SIZE, "White"),
+                        (improvement_text, 200, DEFAULT_FONT_SIZE, "Green")]
             case 'RegularDamageBonus':
                 return [(f"Increase normal\nprojectile damage by {upgrade_value:.1f}", 50, DEFAULT_FONT_SIZE, "White"),
                         (improvement_text, 200, DEFAULT_FONT_SIZE, "Light Blue")]

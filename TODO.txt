@@ -19,7 +19,6 @@ You also get major upgrades right before the final boss
     One more alternate fire
     A fourth and final boss
     A fourth regular enemy type
-    A dash cooldown upgrade
 
 --Medium-- (Things I will add if I have time to spare)
 -Improve musical transitions

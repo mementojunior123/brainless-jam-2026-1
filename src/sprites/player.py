@@ -20,7 +20,8 @@ class AlternateFireTypes(Enum):
 
 UpgradeType : TypeAlias = Literal['RegularDamageBonus', 'SpecialDamageMultipler', 'AllDamageMultiplier',
                                   'RegularFirerateMultiplier', 'SpecialFirerateMultiplier', 'AllFirerateMultiplier',
-                                  'AlternateFireType', 'MaxHealthBonus', 'HealHealth', 'HealMax']
+                                  'AlternateFireType', 'MaxHealthBonus', 'HealHealth', 'HealMax',
+                                  'DashRechargeRate']
 
 class AlternateFireBaseStatLine(TypedDict):
     damage : float
@@ -64,6 +65,7 @@ class Upgrades(TypedDict):
     AlternateFireBaseFireRate : float
 
     MaxHealthBonus : int
+    DashRechargeRate : float
 
 class Player(Sprite):
     active_elements : list['Player'] = []
@@ -150,6 +152,7 @@ class Player(Sprite):
             'AlternateFireBaseFireRate' : alternate_fire_base_stats[start_weapon]['firerate'],
             
             'MaxHealthBonus' : 0,
+            'DashRechargeRate' : 1.0,
         }
 
     @classmethod
@@ -190,7 +193,7 @@ class Player(Sprite):
         core_object.main_ui.add(element.ui_alternate_fire_sprite)
 
         element.dash_timer = Timer(Player.DASH_DURATION, core_object.game.game_timer.get_time)
-        element.dash_timer.start_time -= Player.DASH_COOLDOWN
+        element.dash_timer.start_time -= (Player.DASH_COOLDOWN / element.upgrades['DashRechargeRate'])
         element.dash_direction = None
         element.dash_track = None
 
@@ -269,7 +272,7 @@ class Player(Sprite):
                 self.perform_alternate_fire(ignore_cooldown=False)
     
     def attempt_dash(self):
-        if self.dash_timer.get_time() <= Player.DASH_COOLDOWN:
+        if self.dash_timer.get_time() <= (Player.DASH_COOLDOWN / self.upgrades['DashRechargeRate']):
             return
         dash_direction : int = 0
         pressed_keys = pygame.key.get_pressed()
@@ -433,7 +436,7 @@ class Player(Sprite):
         self.ui_dash_sprite.surf.fill((0, 255, 0))
         max_width : int = self.ui_dash_sprite.rect.width
         bar_height : int = self.ui_dash_sprite.rect.height
-        ready_percentage : float = self.dash_timer.get_time() / Player.DASH_COOLDOWN
+        ready_percentage : float = self.dash_timer.get_time() / (Player.DASH_COOLDOWN / self.upgrades['DashRechargeRate'])
         bar_width : int = int(pygame.math.lerp(max_width, 0, ready_percentage))
         pygame.draw.rect(self.ui_dash_sprite.surf, 'White', (0, 0, bar_width, bar_height))
         self.ui_dash_sprite.rect.midtop = self.rect.midbottom + pygame.Vector2(0, 4)
