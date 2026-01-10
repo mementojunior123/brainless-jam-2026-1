@@ -119,6 +119,7 @@ class BasicBoss(BaseBoss):
         max_width : int = self.health_bar.rect.width
         bar_height : int = self.health_bar.rect.height
         bar_width : int = int(pygame.math.lerp(0, max_width, health_percentage))
+        self.health_bar.surf.fill((90, 90, 90))
         pygame.draw.rect(self.health_bar.surf, self.get_healthbar_color(health_percentage), (0, 0, bar_width, bar_height))
         self.health_bar.rect.midbottom = self.rect.midtop + pygame.Vector2(0, -2)
     
@@ -444,6 +445,7 @@ class GoldenBoss(BaseBoss):
         max_width : int = self.health_bar.rect.width
         bar_height : int = self.health_bar.rect.height
         bar_width : int = int(pygame.math.lerp(0, max_width, health_percentage))
+        self.health_bar.surf.fill((90, 90, 90))
         pygame.draw.rect(self.health_bar.surf, self.get_healthbar_color(health_percentage), (0, 0, bar_width, bar_height))
         self.health_bar.rect.midbottom = self.rect.midtop + pygame.Vector2(0, -2)
     
@@ -727,7 +729,7 @@ class GoldenBossHomingShotScript(CoroutineScript):
                 core_object.bg_manager.play_sfx(Player.rocket_shot_sfx, 1.0)
                 min_shot_cooldown.restart()
                 current_aggro = 0
-                aggro_required = random.uniform(90, 270)
+                aggro_required = random.uniform(120, 360)
             delta = yield
 
 class GoldenBossDeathSequence(CoroutineScript):
@@ -822,6 +824,7 @@ class SpaceshipBoss(BaseBoss):
         max_width : int = self.health_bar.rect.width
         bar_height : int = self.health_bar.rect.height
         bar_width : int = int(pygame.math.lerp(0, max_width, health_percentage))
+        self.health_bar.surf.fill((90, 90, 90))
         pygame.draw.rect(self.health_bar.surf, self.get_healthbar_color(health_percentage), (0, 0, bar_width, bar_height))
         self.health_bar.rect.midbottom = self.rect.midtop + pygame.Vector2(0, -2)
     
@@ -930,6 +933,8 @@ class SpaceshipBossEntryScript(CoroutineScript):
         unit.invincible = False
         return "Done"
 
+
+
 class SpaceshipBossRunAndGunScript(CoroutineScript):
     def initialize(self, time_source : TimeSource, unit : SpaceshipBoss):
         return super().initialize(time_source, unit)
@@ -951,11 +956,19 @@ class SpaceshipBossRunAndGunScript(CoroutineScript):
         script_timer : Timer = Timer(random.uniform(5, 10), time_source)
         main_script : SpaceshipBossBasicMovementScript = SpaceshipBossBasicMovementScript()
         main_script2 : SpaceshipBossBasicShootingScript = SpaceshipBossBasicShootingScript()
+        main_script3 : SpaceshipBossHomingShotScript = SpaceshipBossHomingShotScript()
+        main_script4 : SpaceshipBossShotgunScript = SpaceshipBossShotgunScript()
+
         main_script.initialize(time_source, unit)
         main_script2.initialize(time_source, unit)
+        main_script3.initialize(time_source, unit)
+        main_script4.initialize(time_source, unit)
+
         while not script_timer.isover():
             curr_direction : int = main_script.process_frame(delta)
             main_script2.process_frame(delta)
+            main_script3.process_frame(delta)
+            main_script4.process_frame(delta)
             delta = yield
         SPEED : float = 6.0
         move_timer : Timer = Timer(1.5, time_source)
@@ -970,59 +983,6 @@ class SpaceshipBossRunAndGunScript(CoroutineScript):
                 unit.move_rect('left', 0)
             delta = yield
         return
-
-class SpaceshipBossSummonScript(CoroutineScript):
-    def initialize(self, time_source : TimeSource, unit : SpaceshipBoss):
-        return super().initialize(time_source, unit)
-    
-    def type_hints(self):
-        self.coro_attributes = []
-    
-    def process_frame(self, values : float) -> None:
-        return super().process_frame(values)
-    
-    @staticmethod
-    def summon_enemy(unit : SpaceshipBoss, enemy_type : "EnemyType") -> BaseNormalEnemy:
-        summon_point : pygame.Vector2 = unit.rect.midbottom + pygame.Vector2(0, -10)
-        summon_anchor = 'midbottom'
-        summon_target : pygame.Vector2 = unit.rect.midbottom + pygame.Vector2(0, -10)
-        match enemy_type:
-            case 'basic':
-                return BasicEnemy.spawn(summon_anchor, summon_point, 'midtop', summon_target)
-            case 'elite':
-                return EliteEnemy.spawn(summon_anchor, summon_point, 'midtop', summon_target)
-            case 'gunner':
-                return GunnerEnemy.spawn(summon_anchor, summon_point, 'midtop', summon_target)
-            case _:
-                core_object.log(f"Enemy type {enemy_type} does not exist!")
-    
-    @staticmethod
-    def corou(time_source : TimeSource, unit : SpaceshipBoss) -> Generator[None, float, None]: #Yield, Send, Return
-        screen_size = core_object.main_display.get_size()
-        screen_sizex, screen_sizey = screen_size
-        centerx, centery = screen_sizex // 2, screen_sizey // 2
-        delay : Timer = Timer(0.1, time_source)
-        unit.image = SpaceshipBoss.spaceship_boss_active_image
-        delta = yield
-        if delta is None: delta = core_object.dt
-        while not delay.isover():
-            delta = yield
-        
-        cooldown_timer : Timer = Timer(0.6, time_source)
-        for _ in range(8):
-            while not cooldown_timer.isover():
-                delta = yield
-            cooldown_timer.restart()
-            candidates : list[EnemyType] = ['basic', 'elite', 'gunner']
-            SpaceshipBossSummonScript.summon_enemy(unit, random.choice(candidates))
-        while not cooldown_timer.isover():
-            delta = yield
-        unit.image = SpaceshipBoss.spaceship_boss_image    
-        delay.set_duration(0.5)
-        while not delay.isover():
-            delta = yield
-        return
-        
 
 class SpaceshipBossBasicMovementScript(CoroutineScript):
     def initialize(self, time_source : TimeSource, unit : SpaceshipBoss):
@@ -1202,6 +1162,112 @@ class SpaceshipBossHomingShotScript(CoroutineScript):
                 current_aggro = 0
                 aggro_required = random.uniform(90, 270)
             delta = yield
+
+class SpaceshipBossShotgunScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : SpaceshipBoss):
+        return super().initialize(time_source, unit)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None|str:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def player_proximity_buff(x_offset : float) -> float:
+        if x_offset < 16:
+            return 8
+        elif x_offset < 50:
+            return 4
+        elif x_offset < 100:
+            return 2
+        elif x_offset < 150:
+            return 1
+        else:
+            return 0.5
+    
+    @staticmethod
+    def corou(time_source : TimeSource, unit : SpaceshipBoss) -> Generator[None, float, str]: #Yield, Send, Return
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+        bounding_box : pygame.Rect = pygame.Rect(0, 0, screen_sizex, screen_sizey)
+
+        min_shot_cooldown : Timer = Timer(0.25, time_source)
+        aggro_required : float = 90.0
+        current_aggro : float = 0
+        player : Player|None
+        if not Player.active_elements:
+            player = None
+        else:
+            player = Player.active_elements[0]
+        delta = yield
+        if delta is None: delta = core_object.dt
+        while True:
+            proximity_buff : float = SpaceshipBossShotgunScript.player_proximity_buff(abs(unit.position.x - player.position.x) if player else 999)
+            current_aggro +=  delta * proximity_buff
+            if min_shot_cooldown.isover() and current_aggro >= aggro_required:
+                angle_offset : float = (pygame.Vector2(0, 1).angle_to(player.position - unit.position)) * 0
+                unit.fire_normal_projectile(angle_offset)
+                core_object.bg_manager.play_sfx(Player.shotgun_shot_sfx, 1.0)
+                unit.fire_normal_projectile(angle_offset - 20)
+                unit.fire_normal_projectile(angle_offset + 20)
+                min_shot_cooldown.restart()
+                current_aggro = 0
+                aggro_required = random.uniform(60, 120)
+            delta = yield
+
+class SpaceshipBossSummonScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : SpaceshipBoss):
+        return super().initialize(time_source, unit)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def summon_enemy(unit : SpaceshipBoss, enemy_type : "EnemyType") -> BaseNormalEnemy:
+        summon_point : pygame.Vector2 = unit.rect.midbottom + pygame.Vector2(0, -10)
+        summon_anchor = 'midbottom'
+        summon_target : pygame.Vector2 = unit.rect.midbottom + pygame.Vector2(0, -10)
+        match enemy_type:
+            case 'basic':
+                return BasicEnemy.spawn(summon_anchor, summon_point, 'midtop', summon_target)
+            case 'elite':
+                return EliteEnemy.spawn(summon_anchor, summon_point, 'midtop', summon_target)
+            case 'gunner':
+                return GunnerEnemy.spawn(summon_anchor, summon_point, 'midtop', summon_target)
+            case _:
+                core_object.log(f"Enemy type {enemy_type} does not exist!")
+    
+    @staticmethod
+    def corou(time_source : TimeSource, unit : SpaceshipBoss) -> Generator[None, float, None]: #Yield, Send, Return
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+        delay : Timer = Timer(0.1, time_source)
+        unit.image = SpaceshipBoss.spaceship_boss_active_image
+        delta = yield
+        if delta is None: delta = core_object.dt
+        while not delay.isover():
+            delta = yield
+        
+        cooldown_timer : Timer = Timer(0.6, time_source)
+        for _ in range(8):
+            while not cooldown_timer.isover():
+                delta = yield
+            cooldown_timer.restart()
+            candidates : list[EnemyType] = ['basic', 'elite', 'gunner']
+            SpaceshipBossSummonScript.summon_enemy(unit, random.choice(candidates))
+        while not cooldown_timer.isover():
+            delta = yield
+        unit.image = SpaceshipBoss.spaceship_boss_image    
+        delay.set_duration(0.5)
+        while not delay.isover():
+            delta = yield
+        return
 
 class SpaceshipBossDeathSequence(CoroutineScript):
     def initialize(self, time_source : TimeSource, unit : SpaceshipBoss):

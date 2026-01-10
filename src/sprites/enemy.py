@@ -553,7 +553,7 @@ class RunnerEnemy(BaseNormalEnemy):
     active_elements : list['RunnerEnemy'] = []
     inactive_elements : list['RunnerEnemy'] = []
     linked_classes : list['Sprite'] = [Sprite, BaseEnemy, BaseNormalEnemy]
-    BASE_SPEED : float = 7.0
+    BASE_SPEED : float = 5.0
 
     runner_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/enemy/runner_enemy.png", (0, 255, 0))
 
