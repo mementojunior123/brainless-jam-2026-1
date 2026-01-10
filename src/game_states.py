@@ -827,33 +827,39 @@ class ShopControlScript(CoroutineScript):
                 result = [(f"Lazer specialist {'I' * new_level}:", 50, DEFAULT_FONT_SIZE, "White")]
                 match player.upgrades['LazerSpecialist']:
                     case 0:
-                        result.append((f"On hit, the\nlazer splits in\nfour projectiles that\ndeal half damage.", 100, DEFAULT_FONT_SIZE, "White"))
+                        text = f"On hit, the\nlazer splits in\nfour projectiles that\ndeal half damage."
                     case 1:
-                        result.append((f"The lazer now\nsplits one more time\nand conserves 65%\n of the damage\neach split.", 100, DEFAULT_FONT_SIZE, "White"))
+                        text = f"The lazer now\nsplits one more time\nand conserves 65%\n of the damage\neach split."
                     case 2:
-                        result.append((f"The lazer now\nno longer loses damage\neach split and\ndeals 50% more damage.", 100, DEFAULT_FONT_SIZE, "White"))
+                        text = f"The lazer now\nno longer loses damage\neach split and\ndeals 50% more damage."
+                for i, line in enumerate(text):
+                    result.append((line, 100 + (DEFAULT_FONT_SIZE + 1) * i, DEFAULT_FONT_SIZE, "White"))
                 return result
             case 'ShotgunSpecialist':
                 new_level : int = player.upgrades['ShotgunSpecialist'] + 1
                 result = [(f"Shotgun specialist {'I' * new_level}:", 50, DEFAULT_FONT_SIZE, "White")]
                 match player.upgrades['ShotgunSpecialist']:
                     case 0:
-                        result.append((f"On hit, the\nshotgun shells split\nin three, dealing more\ndamage.", 100, DEFAULT_FONT_SIZE, "White"))
+                        text = f"On hit, the\nshotgun shells split\nin three, dealing more\ndamage."
                     case 1:
-                        result.append((f"The shotgun shells now\nbounce of the edges\nof the screen twice,\ndealing even more damage", 100, DEFAULT_FONT_SIZE, "White"))
+                        text = f"The shotgun shells now\nbounce of the edges\nof the screen twice,\ndealing even more damage"
                     case 2:
                         return [(f"Error:\nShotgun specialist III\ndoes not exist!", 50, DEFAULT_FONT_SIZE, "White")]
+                for i, line in enumerate(text):
+                    result.append((line, 100 + (DEFAULT_FONT_SIZE + 1) * i, DEFAULT_FONT_SIZE, "White"))
                 return result
             case 'RocketSpecialist':
                 new_level : int = player.upgrades['RocketSpecialist'] + 1
                 result = [(f"Rocket specialist {'I' * new_level}:", 50, DEFAULT_FONT_SIZE, "White")]
                 match player.upgrades['RocketSpecialist']:
                     case 0:
-                        result.append((f"The rocket now\nhas an increased\nexplosive range and\ndeals more AOE damage", 100, DEFAULT_FONT_SIZE, "White"))
+                        text = f"The rocket now\nhas an increased\nexplosive range and\ndeals more AOE damage"
                     case 1:
                         return [(f"Error:\nRocket specialist II\ndoes not exist!", 50, DEFAULT_FONT_SIZE, "White")]
                     case 2:
                         return [(f"Error:\nRocket specialist III\ndoes not exist!", 50, DEFAULT_FONT_SIZE, "White")]
+                for i, line in enumerate(text):
+                    result.append((line, 100 + (DEFAULT_FONT_SIZE + 1) * i, DEFAULT_FONT_SIZE, "White"))
                 return result
             case _:
                 return [("Unknown upgrade", 50, DEFAULT_FONT_SIZE), (upgrade_type, 100, DEFAULT_FONT_SIZE), (str(upgrade_value), 150, DEFAULT_FONT_SIZE)]
