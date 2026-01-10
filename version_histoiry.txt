@@ -16,3 +16,6 @@ Version J04 (09-01-2026, 21:32):
     -Added a new alternate fire
     -Did a few balance changes
     -Made a few other tweaks
+
+Version J05 (09-01-2026, 21:35):
+    -Fixed a bug that caused the game to not start

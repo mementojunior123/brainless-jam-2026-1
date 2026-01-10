@@ -29,7 +29,7 @@ class BaseProjectile(Sprite):
     normal_image3 : pygame.Surface = remove_image_empty(load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_3-white.png", (0, 255, 0)))
     normal_image4 : pygame.Surface = remove_image_empty(load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_4-white.png", (0, 255, 0))
 )
-    explosion_sfx1 : pygame.Sound = pygame.Sound("assets/audio/sfx/explosion1.ogg")
+    explosion_sfx1 : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/explosion1.ogg")
     explosion_sfx1.set_volume(0.7)
     bounding_box : pygame.Rect = pygame.Rect(0, 0, *core_object.main_display.get_size())
 
