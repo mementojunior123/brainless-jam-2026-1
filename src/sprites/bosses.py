@@ -311,11 +311,11 @@ class BasicBossShootingScript(CoroutineScript):
     @staticmethod
     def player_proximity_buff(x_offset : float) -> float:
         if x_offset < 16:
-            return 8
-        elif x_offset < 50:
             return 4
-        elif x_offset < 100:
+        elif x_offset < 50:
             return 2
+        elif x_offset < 100:
+            return 1.5
         elif x_offset < 150:
             return 1
         else:
@@ -354,7 +354,7 @@ class BasicBossShootingScript(CoroutineScript):
                     pass
                 min_shot_cooldown.restart()
                 current_aggro = 0
-                aggro_required = random.uniform(40, 80) if not fired_shotgun else random.uniform(60, 120)
+                aggro_required = random.uniform(60, 120) if not fired_shotgun else random.uniform(80, 160)
             delta = yield
 
 class BasicBossDeathSequence(CoroutineScript):
@@ -677,7 +677,7 @@ class GoldenBossShootingScript(CoroutineScript):
                 unit.fire_normal_projectile()
                 min_shot_cooldown.restart()
                 current_aggro = 0
-                aggro_required = random.uniform(30, 60)
+                aggro_required = random.uniform(50, 100)
             delta = yield
 
 class GoldenBossHomingShotScript(CoroutineScript):
@@ -731,7 +731,7 @@ class GoldenBossHomingShotScript(CoroutineScript):
                 core_object.bg_manager.play_sfx(Player.rocket_shot_sfx, 1.0)
                 min_shot_cooldown.restart()
                 current_aggro = 0
-                aggro_required = random.uniform(120, 360)
+                aggro_required = random.uniform(180, 360)
             delta = yield
 
 class GoldenBossDeathSequence(CoroutineScript):

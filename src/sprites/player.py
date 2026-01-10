@@ -33,9 +33,9 @@ class AlternateFireBaseStatLine(TypedDict):
 alternate_fire_base_stats : dict[int, AlternateFireBaseStatLine] = {
     AlternateFireTypes.LAZER.value : {
         'damage' : 4,
-        'firerate' : 1.0,
+        'firerate' : 0.9,
         'name' : 'Lazer',
-        'description' : 'A lazer that deals\nhigh damage\nBase stats:\n4 damage\n1.0 shots/s'
+        'description' : 'A lazer that deals\nhigh damage\nBase stats:\n4 damage\n0.9 shots/s'
     },
 
     AlternateFireTypes.SHOTGUN.value : {
@@ -443,7 +443,7 @@ class Player(Sprite):
             colored_heart_count -= 1
     
     def create_alternate_fire_visual(self) -> UiSprite:
-        BAR_DIMENSIONS : tuple[int, int] = (2, 50)
+        BAR_DIMENSIONS : tuple[int, int] = (5, 50)
         bar_image : pygame.Surface = pygame.Surface(BAR_DIMENSIONS)
         bar_image.fill((0, 255, 0))
         bar_image.set_colorkey((0, 255, 0))
@@ -461,7 +461,7 @@ class Player(Sprite):
         self.ui_alternate_fire_sprite.rect.midleft = self.rect.midright + pygame.Vector2(10, 0)
     
     def create_dash_cooldown_visual(self) -> UiSprite:
-        BAR_DIMENSIONS : tuple[int, int] = (50, 2)
+        BAR_DIMENSIONS : tuple[int, int] = (50, 5)
         bar_image : pygame.Surface = pygame.Surface(BAR_DIMENSIONS)
         bar_image.fill((0, 255, 0))
         bar_image.set_colorkey((0, 255, 0))
