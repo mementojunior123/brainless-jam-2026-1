@@ -9,3 +9,10 @@ Version J02 (08-01-2026, 20:05):
 
 Version J03 (08-01-2026, 20:50):
     -Made a few balance changes
+
+Version J04 (09-01-2026, 21:32):
+    -Started work on a new boss
+    -Added weapon specialist upgrades
+    -Added a new alternate fire
+    -Did a few balance changes
+    -Made a few other tweaks
