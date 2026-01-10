@@ -1,7 +1,7 @@
 import pygame
 from typing import Generator, TypeAlias, Literal, TypedDict
 from framework.game.sprite import Sprite
-from framework.utils.helpers import load_alpha_to_colorkey, recolor_image
+from framework.utils.helpers import load_alpha_to_colorkey, recolor_image, sign
 from framework.utils.my_timer import Timer, TimeSource
 from framework.core.core import core_object
 from framework.game.coroutine_scripts import CoroutineScript
@@ -290,7 +290,10 @@ class Player(Sprite):
         if pressed_keys[pygame.K_d] or pressed_keys[pygame.K_RIGHT]:
             dash_direction += 1
         if dash_direction == 0:
-            return
+            if self.velocity.magnitude() > 6:
+                dash_direction = sign(self.velocity.x)
+            else:
+                return
         self.dash_direction = dash_direction
         self.dash_timer.restart()
         self.velocity += pygame.Vector2(dash_direction * 6, 0)
@@ -381,7 +384,7 @@ class Player(Sprite):
         return proj_list
     
     def fire_rocket(self, damage : float) -> HomingProjectile:
-        explosive_range : float = 350 if self.upgrades['RocketSpecialist'] >= 1 else 250
+        explosive_range : float = 300 if self.upgrades['RocketSpecialist'] >= 1 else 250
         aoe_fraction : float = 0.75 if self.upgrades['RocketSpecialist'] >= 1 else 0.50
         core_object.bg_manager.play_sfx(Player.rocket_shot_sfx, 1.0)
         return HomingProjectile.spawn(self.position + pygame.Vector2(0, -30), 

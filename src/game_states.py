@@ -622,7 +622,7 @@ class ShopGameState(NormalGameState):
             elif section == 1:
                 candidates = {
                     random.choice(['AllDamageMultiplier', 'AllFirerateMultiplier']) : 0.5,
-                    'AlternateFireType' : AlternateFireTypes.SHOTGUN.value,
+                    'AlternateFireType' : AlternateFireTypes.ROCKET.value,
                     specialist_type : 1,
                 }
             elif section == 2:
