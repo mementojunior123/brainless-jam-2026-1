@@ -679,8 +679,9 @@ class BossTypes(Enum):
     BASIC_BOSS = 'basic_boss'
     GOLDEN_BOSS = 'golden_boss'
     SPACESHIP_BOSS = 'spaceship_boss'
+    FINAL_BOSS = 'final_boss'
 
-BossType : TypeAlias = Literal['basic_boss', 'golden_boss', 'spaceship_boss']
+BossType : TypeAlias = Literal['basic_boss', 'golden_boss', 'spaceship_boss', 'final_boss']
 
 def runtime_imports():
     global Player, src

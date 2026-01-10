@@ -488,6 +488,10 @@ class BasicWaveControlScript(CoroutineScript):
             boss = SpaceshipBoss.spawn()
             boss.max_hp = boss.max_hp // 3
             boss.health = boss.max_hp
+        elif enemy_type == BossTypes.FINAL_BOSS.value:
+            boss = SpaceshipBoss.spawn()
+            boss.max_hp = boss.max_hp // 3
+            boss.health = boss.max_hp
         else:
             core_object.log(f"Enemy type '{enemy_type}' not found!")
     
@@ -500,6 +504,8 @@ class BasicWaveControlScript(CoroutineScript):
             return GoldenBoss.spawn()
         elif boss_type == 'spaceship_boss':
             return SpaceshipBoss.spawn()
+        elif boss_type == 'final_boss':
+            return FinalBoss.spawn()
         else:
             core_object.log(f"Enemy type '{boss_type}' not found")
     
@@ -1046,9 +1052,9 @@ def runtime_imports():
     from src.sprites.enemy import EnemyTypes, EnemyType, BossTypes, BossType
     src.sprites.enemy.runtime_imports()
 
-    global BasicBoss, BaseBoss, GoldenBoss, SpaceshipBoss
+    global BasicBoss, BaseBoss, GoldenBoss, SpaceshipBoss, FinalBoss
     import src.sprites.bosses
-    from src.sprites.bosses import BasicBoss, BaseBoss, GoldenBoss, SpaceshipBoss
+    from src.sprites.bosses import BasicBoss, BaseBoss, GoldenBoss, SpaceshipBoss, FinalBoss
     src.sprites.bosses.runtime_imports()
 
     global BaseProjectile

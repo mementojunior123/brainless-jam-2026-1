@@ -519,7 +519,7 @@ class GoldenBossControlScript(CoroutineScript):
         while not death_script.is_over:
             death_script.process_frame(delta)
             delta = yield
-        unit.give_score(200)
+        unit.give_score(500)
         return
 
 class GoldenBossEntryScript(CoroutineScript):
@@ -899,7 +899,7 @@ class SpaceshipBossControlScript(CoroutineScript):
         while not death_script.is_over:
             death_script.process_frame(delta)
             delta = yield
-        unit.give_score(200)
+        unit.give_score(1000)
         return
 
 class SpaceshipBossEntryScript(CoroutineScript):
@@ -1270,6 +1270,522 @@ class SpaceshipBossDeathSequence(CoroutineScript):
         core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
         return "Done"
 
+class FinalBoss(BaseBoss):
+    active_elements : list['FinalBoss'] = []
+    inactive_elements : list['FinalBoss'] = []
+    linked_classes : list['Sprite'] = [Sprite, BaseEnemy, BaseBoss]
+
+    final_boss_image : pygame.Surface = pygame.transform.scale_by(load_alpha_to_colorkey('assets/graphics/bosses/final_boss.png', 
+                                                                                         (0, 255, 0)), 1.5)
+    final_boss_image = remove_image_empty(final_boss_image)
+    final_boss_active_image : pygame.Surface = pygame.transform.scale_by(load_alpha_to_colorkey('assets/graphics/bosses/final_boss-hot.png', 
+                                                                                         (0, 255, 0)), 1.5)
+    final_boss_active_image = remove_image_empty(final_boss_active_image)
+    def __init__(self):
+        super().__init__()
+        self.control_script : FinalBossControlScript
+        self.health_bar : UiSprite
+        self.max_hp : float
+        FinalBoss.inactive_elements.append(self)
+
+    @classmethod
+    def spawn(cls):
+        element = cls.inactive_elements[0]
+
+        element.image = FinalBoss.final_boss_image
+        element.mask = pygame.mask.from_surface(element.image)
+        element.rect = element.image.get_rect()
+
+        element.position = pygame.Vector2(0, 0)
+        element.move_rect("midbottom", pygame.Vector2(480, 0))
+        element.zindex = 1
+        element.current_camera = core_object.game.main_camera
+
+        element.type = 'final_boss'
+        element.max_hp = 400
+        element.health = element.max_hp
+        element.health_bar = element.create_healthbar_visual()
+        element.update_healthbar_visual()
+        core_object.main_ui.add(element.health_bar)
+        element.health_bar.visible = False
+        element.invincible = False
+
+        element.control_script = FinalBossControlScript()
+        element.control_script.initialize(core_object.game.game_timer.get_time, element)
+
+        cls.unpool(element)
+        return element
+    
+    @staticmethod
+    def get_healthbar_color(percentage : float):
+        colors = {'Dark Green' : 0.8, 'Green' : 0.6, 'Yellow' : 0.4, 'Orange' : 0.2, 'Red' : -1}
+        for color, value in colors.items():
+            if percentage > value:
+                return color
+
+    def create_healthbar_visual(self) -> UiSprite:
+        BAR_DIMENSIONS : tuple[int, int] = (50, 5)
+        bar_image : pygame.Surface = pygame.Surface(BAR_DIMENSIONS)
+        bar_image.fill(self.get_healthbar_color(1.0))
+        bar_image.set_colorkey((0, 255, 255))
+        new_sprite : UiSprite = UiSprite(bar_image, bar_image.get_rect(midbottom = self.rect.midtop + pygame.Vector2(0, -2)),
+                                         -1, 'boss_healthbar')
+        return new_sprite
+    
+    def update_healthbar_visual(self):
+        health_percentage : float = self.health / self.max_hp
+        self.health_bar.surf.fill((0, 255, 255))
+        max_width : int = self.health_bar.rect.width
+        bar_height : int = self.health_bar.rect.height
+        bar_width : int = int(pygame.math.lerp(0, max_width, health_percentage))
+        self.health_bar.surf.fill((90, 90, 90))
+        pygame.draw.rect(self.health_bar.surf, self.get_healthbar_color(health_percentage), (0, 0, bar_width, bar_height))
+        self.health_bar.rect.midbottom = self.rect.midtop + pygame.Vector2(0, -2)
+    
+    def update(self, delta: float):
+        next_script = self.control_script.process_frame(delta)
+        if isinstance(next_script, CoroutineScript):
+            self.control_script = next_script
+            self.control_script.initialize(core_object.game.game_timer.get_time, self)
+        elif self.control_script.is_over:
+            self.kill_instance_safe()
+            return
+        self.check_collisions()
+        self.update_healthbar_visual()
+    
+    def fire_homing_projectile(self, angle : float = 0, speed : float = 4.5, rate : float = 0.8, h_range : float = 300) -> HomingProjectile:
+        return HomingProjectile.spawn(self.position + pygame.Vector2(0, self.rect.height // 2 - 15), 
+                                      pygame.Vector2(0, speed).rotate(angle), 
+                                      None, None, 0,
+        BaseProjectile.rocket_image, homing_range=h_range, homing_rate=rate,
+        homing_targets=Player, team=Teams.ENEMY, destructible=True)
+    
+    def fire_normal_projectile(self, angle : float = 0) -> NormalProjectile:
+        return NormalProjectile.spawn(self.position + pygame.Vector2(0, self.rect.height // 2 + 10), pygame.Vector2(0, 8).rotate(angle), 
+                                      None, None, angle,
+        recolor_image(BaseProjectile.normal_image3, "Red"),  team=Teams.ENEMY)
+    
+    def clean_instance(self):
+        super().clean_instance()
+        self.control_script = None
+        self.max_hp = None
+        self.health_bar = None
+
+class FinalBossControlScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : FinalBoss):
+        return super().initialize(time_source, unit)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def corou(time_source : TimeSource, unit : FinalBoss) -> Generator[None, float, None]: #Yield, Send, Return
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+
+        entry_script : FinalBossEntryScript = FinalBossEntryScript()
+        entry_script.initialize(time_source, unit)
+        delta = yield
+        if delta is None: delta = core_object.dt
+        while not entry_script.is_over:
+            entry_script.process_frame(delta)
+            delta = yield
+        
+        sequence : list[type[CoroutineScript]] = [FinalBossRunAndGunScript, FinalBossSummonScript]
+        sequence_index : int = 0
+        main_script : CoroutineScript = sequence[sequence_index]()
+        main_script.initialize(time_source, unit)
+        while unit.health > 0:
+            main_script.process_frame(delta)
+            if main_script.is_over:
+                sequence_index = (sequence_index + 1) % len(sequence)
+                main_script = sequence[sequence_index]()
+                main_script.initialize(time_source, unit)
+            delta = yield
+
+        unit.invincible = True
+        death_script : FinalBossDeathSequence = FinalBossDeathSequence()
+        death_script.initialize(time_source, unit)
+        while not death_script.is_over:
+            death_script.process_frame(delta)
+            delta = yield
+        unit.give_score(2500)
+        return
+
+class FinalBossEntryScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : FinalBoss):
+        return super().initialize(time_source, unit)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None|str:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def corou(time_source : TimeSource, unit : FinalBoss) -> Generator[None, float, str]: #Yield, Send, Return
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+
+        target_position : pygame.Vector2 = pygame.Vector2(centerx, 20) + pygame.Vector2(0, unit.rect.height // 2)
+        start_position : pygame.Vector2 = unit.position.copy()
+        move_in_timer : Timer = Timer(2, time_source)
+        delta = yield
+        unit.invincible = True
+        if delta is None: delta = core_object.dt
+        while not move_in_timer.isover():
+            alpha : float = interpolation.smoothstep(move_in_timer.get_time() / move_in_timer.duration)
+            new_pos : pygame.Vector2 = start_position.lerp(target_position, alpha)
+            unit.position = new_pos
+            delta = yield
+        unit.position = target_position
+        unit.invincible = False
+        return "Done"
+
+
+
+class FinalBossRunAndGunScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : FinalBoss):
+        return super().initialize(time_source, unit)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def corou(time_source : TimeSource, unit : FinalBoss) -> Generator[None, float, None]: #Yield, Send, Return
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+
+        delta = yield
+        if delta is None: delta = core_object.dt
+        script_timer : Timer = Timer(random.uniform(11, 15), time_source)
+        main_script : FinalBossBasicMovementScript = FinalBossBasicMovementScript()
+        main_script2 : FinalBossBasicShootingScript = FinalBossBasicShootingScript()
+        main_script3 : FinalBossSpecialShotScript = FinalBossSpecialShotScript()
+
+        main_script.initialize(time_source, unit)
+        main_script2.initialize(time_source, unit)
+        main_script3.initialize(time_source, unit)
+
+        while not script_timer.isover():
+            curr_direction : int = main_script.process_frame(delta)
+            main_script2.process_frame(delta)
+            main_script3.process_frame(delta)
+            delta = yield
+        SPEED : float = 7.0
+        move_timer : Timer = Timer(1.5, time_source)
+    
+        while not move_timer.isover():
+            speed_percent = interpolation.quad_ease_out(pygame.math.clamp(move_timer.get_time() / move_timer.duration, 0, 1))
+            actual_speed = pygame.math.lerp(SPEED, 0, speed_percent)
+            unit.position += pygame.Vector2(curr_direction * actual_speed * delta, 0)
+            if unit.rect.right > screen_sizex:
+                unit.move_rect('right', screen_sizex)
+            if unit.rect.left < 0:
+                unit.move_rect('left', 0)
+            delta = yield
+        return
+
+class FinalBossBasicMovementScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : FinalBoss):
+        return super().initialize(time_source, unit)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> int|CoroutineScript:
+        return super().process_frame(values)
+
+    @staticmethod
+    def predict_projectile_contact(unit : FinalBoss, projectile : BaseProjectile, unit_velocity : pygame.Vector2,
+                                   bounding_box : pygame.Rect) -> bool:
+        if abs(unit.position.y - projectile.position.y) > 200.0:
+            return False
+        projected_unit_position : pygame.Vector2 = unit.position.copy()
+        projected_projectile_position : pygame.Vector2 = projectile.position.copy()
+        projected_unit_rect = unit.rect.copy()
+        projected_projectile_rect = projectile.rect.copy()
+        prev_distance : float = 999_999.0
+        for _ in range(100):
+            projected_unit_position += unit_velocity
+            projected_projectile_position += projectile.velocity
+            projected_projectile_rect.center = projected_projectile_position
+            projected_unit_rect.center = projected_unit_position
+            distance : float = (projected_projectile_position - projected_unit_position).magnitude()
+            if projected_projectile_rect.colliderect(projected_unit_rect):
+                return True
+            prev_distance = distance
+            if not (bounding_box.collidepoint(projected_unit_position) and bounding_box.collidepoint(projected_projectile_position)):
+                break
+        return False
+
+    @staticmethod
+    def corou(time_source : TimeSource, unit : FinalBoss) -> Generator[int, float, CoroutineScript]: #Yield, Send, Return
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+
+        dodge_cooldown : Timer = Timer(0.5, time_source)
+        bounding_box : pygame.Rect = pygame.Rect(0, 0, screen_sizex, screen_sizey)
+        direction : int = 1
+        SPEED : float = 7.0
+        move_timer : Timer = Timer(-1, time_source)
+        moved_inbounds : bool = False
+        delta = yield direction
+        if delta is None: delta = core_object.dt
+        while True:
+            speed_percent = interpolation.quad_ease_out(pygame.math.clamp(move_timer.get_time() / 0.7, 0, 1))
+            actual_speed = pygame.math.lerp(0, SPEED, speed_percent)
+            unit.position += pygame.Vector2(direction * actual_speed * delta, 0)
+            if unit.rect.left > 100 and unit.rect.right < screen_sizex - 100:
+                moved_inbounds = True
+            if moved_inbounds:
+                if unit.rect.right > screen_sizex - 100:
+                    unit.move_rect("right", screen_sizex - 100)
+                    direction = -1
+                if unit.rect.left < 100: 
+                    unit.move_rect("left", 100)
+                    direction = 1
+            else:
+                if unit.rect.right > screen_sizex:
+                    unit.move_rect("right", screen_sizex)
+                    direction = -1
+                if unit.rect.left < 0: 
+                    unit.move_rect("left", 0)
+                    direction = 1
+
+            distance_to_margin : float = min(unit.rect.left, abs(screen_sizex - unit.rect.right))
+            if distance_to_margin > 150:
+                if dodge_cooldown.isover():
+                    for proj in BaseProjectile.active_elements:
+                        if proj.team not in (Teams.ALLIED, Teams.FFA):
+                            continue
+                        if FinalBossBasicMovementScript.predict_projectile_contact(
+                        unit, proj, pygame.Vector2(direction * SPEED, 0), bounding_box):
+                            dodge_cooldown.set_duration(0.75 if distance_to_margin > 300 else 0.90 )
+                            if distance_to_margin < 200:
+                                luck = 4
+                            else:
+                                luck = 6
+                            if random.randint(1, 10) <= luck:
+                                direction *= -1
+            delta = yield direction
+
+class FinalBossBasicShootingScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : FinalBoss):
+        return super().initialize(time_source, unit)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None|str:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def player_proximity_buff(x_offset : float) -> float:
+        if x_offset < 16:
+            return 8
+        elif x_offset < 50:
+            return 4
+        elif x_offset < 100:
+            return 2
+        elif x_offset < 150:
+            return 1
+        else:
+            return 0.5
+    
+    @staticmethod
+    def enemy_count_debuff() -> float:
+        enemy_count : int = len(BaseNormalEnemy.active_elements)
+        if enemy_count <= 2:
+            return 1
+        return pygame.math.clamp(1 - ((enemy_count - 2) * 0.2), 0.2, 1)
+    
+    @staticmethod
+    def corou(time_source : TimeSource, unit : FinalBoss) -> Generator[None, float, str]: #Yield, Send, Return
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+        bounding_box : pygame.Rect = pygame.Rect(0, 0, screen_sizex, screen_sizey)
+
+        min_shot_cooldown : Timer = Timer(0.25, time_source)
+        aggro_required : float = 90.0
+        current_aggro : float = 0
+        player : Player|None
+        if not Player.active_elements:
+            player = None
+        else:
+            player = Player.active_elements[0]
+        delta = yield
+        if delta is None: delta = core_object.dt
+        while True:
+            proximity_buff : float = FinalBossBasicShootingScript.player_proximity_buff(abs(unit.position.x - player.position.x) if player else 999)
+            current_aggro += delta * proximity_buff * FinalBossBasicShootingScript.enemy_count_debuff()
+            if min_shot_cooldown.isover() and current_aggro >= aggro_required:
+                angle_offset : float = (pygame.Vector2(0, 1).angle_to(player.position - unit.position))
+                unit.fire_normal_projectile()
+                min_shot_cooldown.restart()
+                current_aggro = 0
+                aggro_required = random.uniform(30, 60)
+            delta = yield
+
+class FinalBossSpecialShotScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : FinalBoss):
+        return super().initialize(time_source, unit)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None|str:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def player_proximity_buff(x_offset : float) -> float:
+        if x_offset < 16:
+            return 1.5
+        elif x_offset < 50:
+            return 1.5
+        elif x_offset < 100:
+            return 1
+        elif x_offset < 150:
+            return 0.8
+        else:
+            return 0.8
+    
+    @staticmethod
+    def fire_shotgun(unit : FinalBoss, angle_offset : float):
+        unit.fire_normal_projectile(angle_offset)
+        core_object.bg_manager.play_sfx(Player.shotgun_shot_sfx, 1.0)
+        unit.fire_normal_projectile(angle_offset - 20)
+        unit.fire_normal_projectile(angle_offset + 20)
+    
+    @staticmethod
+    def fire_homing(unit : FinalBoss, angle_offset : float):
+        unit.fire_homing_projectile(angle=angle_offset - 30)
+        unit.fire_homing_projectile(angle=angle_offset + 30)
+        core_object.bg_manager.play_sfx(Player.rocket_shot_sfx, 1.0)
+    
+    @staticmethod
+    def corou(time_source : TimeSource, unit : FinalBoss) -> Generator[None, float, str]: #Yield, Send, Return
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+        bounding_box : pygame.Rect = pygame.Rect(0, 0, screen_sizex, screen_sizey)
+
+        min_shot_cooldown : Timer = Timer(0.25, time_source)
+        aggro_required : float = 200.0
+        current_aggro : float = 0
+        player : Player|None
+        if not Player.active_elements:
+            player = None
+        else:
+            player = Player.active_elements[0]
+        delta = yield
+        if delta is None: delta = core_object.dt
+        while True:
+            proximity_buff : float = FinalBossBasicShootingScript.player_proximity_buff(abs(unit.position.x - player.position.x) if player else 999)
+            current_aggro +=  delta * proximity_buff
+            if min_shot_cooldown.isover() and current_aggro >= aggro_required:
+                angle_offset : float = (pygame.Vector2(0, 1).angle_to(player.position - unit.position))
+                fired_rocket : bool = random.randint(1, 5) <= 2
+                if fired_rocket:
+                    FinalBossSpecialShotScript.fire_homing(unit, angle_offset)
+                else:
+                    FinalBossSpecialShotScript.fire_shotgun(unit, angle_offset)
+                min_shot_cooldown.restart()
+                current_aggro = 0
+                aggro_required = random.uniform(150, 240) if fired_rocket else random.uniform(150, 240)
+            delta = yield
+
+class FinalBossSummonScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : FinalBoss):
+        return super().initialize(time_source, unit)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def summon_enemy(unit : FinalBoss, enemy_type : "EnemyType") -> BaseNormalEnemy:
+        summon_point : pygame.Vector2 = unit.rect.midbottom + pygame.Vector2(0, -10)
+        summon_anchor = 'midbottom'
+        summon_target : pygame.Vector2 = unit.rect.midbottom + pygame.Vector2(0, -10)
+        match enemy_type:
+            case 'basic':
+                return BasicEnemy.spawn(summon_anchor, summon_point, 'midtop', summon_target)
+            case 'elite':
+                return EliteEnemy.spawn(summon_anchor, summon_point, 'midtop', summon_target)
+            case 'gunner':
+                return GunnerEnemy.spawn(summon_anchor, summon_point, 'midtop', summon_target)
+            case _:
+                core_object.log(f"Enemy type {enemy_type} does not exist!")
+    
+    @staticmethod
+    def corou(time_source : TimeSource, unit : FinalBoss) -> Generator[None, float, None]: #Yield, Send, Return
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+        delay : Timer = Timer(0.1, time_source)
+        unit.image = FinalBoss.final_boss_active_image
+        unit.invincible = True
+        delta = yield
+        if delta is None: delta = core_object.dt
+        while not delay.isover():
+            delta = yield
+        
+        BasicBoss.spawn()
+        cooldown_timer : Timer = Timer(0.4, time_source)
+        for _ in range(10):
+            while not cooldown_timer.isover():
+                delta = yield
+            cooldown_timer.restart()
+            candidates : list[EnemyType] = ['basic', 'elite', 'gunner']
+            FinalBossSummonScript.summon_enemy(unit, random.choice(candidates))
+        while not cooldown_timer.isover():
+            delta = yield
+        GoldenBoss.spawn()
+        unit.image = FinalBoss.final_boss_image    
+        delay.set_duration(0.5)
+        while not delay.isover():
+            delta = yield
+        unit.invincible = False
+        return
+
+class FinalBossDeathSequence(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : FinalBoss):
+        return super().initialize(time_source, unit)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None|str:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def corou(time_source : TimeSource, unit : FinalBoss) -> Generator[None, float, str]: #Yield, Send, Return
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+        bounding_box : pygame.Rect = pygame.Rect(0, 0, screen_sizex, screen_sizey)
+
+        delta = yield
+        if delta is None: delta = core_object.dt
+        #Insert death sequence
+        ParticleEffect.load_effect('boss_killed').play(unit.position.copy(), core_object.game.game_timer.get_time)
+        core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
+        return "Done"
+
 def runtime_imports():
     global Player, src
     from src.sprites.player import Player
@@ -1281,6 +1797,8 @@ Sprite.register_class(BaseMiniboss)
 Sprite.register_class(BasicBoss)
 Sprite.register_class(GoldenBoss)
 Sprite.register_class(SpaceshipBoss)
-for _ in range(2) : BasicBoss()
-for _ in range(2) : GoldenBoss()
+Sprite.register_class(FinalBoss)
+for _ in range(5) : BasicBoss()
+for _ in range(5) : GoldenBoss()
 for _ in range(2) : SpaceshipBoss()
+for _ in range(2) : FinalBoss()
