@@ -252,19 +252,23 @@ class Player(Sprite):
     def restrict_to_screen(self):
         MARGIN : int = 25
         if self.rect.right > Player.display_size[0] - MARGIN:
-            self.rect.right = Player.display_size[0] - MARGIN
+            self.move_rect("right", Player.display_size[0] - MARGIN)
             if self.velocity.x > 0: self.velocity.x = 0
         if self.rect.bottom > Player.display_size[1]:
-            self.rect.bottom = Player.display_size[1]
+            self.move_rect("bottom", Player.display_size[1])
         if self.rect.left < MARGIN:
-            self.rect.left = MARGIN
+            self.move_rect('left', MARGIN)
             if self.velocity.x < 0: self.velocity.x = 0
         if self.rect.top < 0:
-            self.rect.top = 0
+            self.move_rect('top', 0)
 
     def calculate_acceleration(self) -> pygame.Vector2:
-        if not self.dash_timer.isover():
-            return pygame.Vector2(self.dash_direction * 7, 0)
+        if not self.dash_timer.isover() and self.dash_direction:
+            MARGIN : int = 25
+            if self.rect.right >= Player.display_size[0] - MARGIN or self.rect.left <= MARGIN:
+                self.dash_direction = 0
+            else:
+                return pygame.Vector2(self.dash_direction * 7, 0)
         pressed_keys = pygame.key.get_pressed()
         accel_total : pygame.Vector2 = pygame.Vector2(0, 0)
         if pressed_keys[pygame.K_a] or pressed_keys[pygame.K_LEFT]:
@@ -282,6 +286,8 @@ class Player(Sprite):
     
     def attempt_dash(self):
         if self.dash_timer.get_time() <= (Player.DASH_COOLDOWN / self.upgrades['DashRechargeRate']):
+            return
+        if not isinstance(core_object.game.state, core_object.game.STATES.NormalGameState):
             return
         dash_direction : int = 0
         pressed_keys = pygame.key.get_pressed()

@@ -110,7 +110,7 @@ class Particle(Sprite):
         self.kill_offscreen= destroy_offscreen
 
         if anim:
-            self.anim_track = anim.load(self)
+            self.anim_track = anim.load(self, time_source)
             self.anim_track.play()
         else:
             self.anim_track = None
