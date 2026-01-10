@@ -239,6 +239,73 @@ WAVE_DATA : dict[int, WaveData] = {
         "spawn_rate_penalty_per_enemy" : 0.08,
         'bosses' : ['spaceship_boss']
     },
+
+        16 : {
+        'enemies' : {
+            'basic' : 10,
+            'elite' : 20,
+            'gunner' : 10,
+            'basic_boss' : 2,
+            'golden_boss' : 2,
+        },
+        "spawn_cooldown" : 0.8,
+        "spawn_rate_penalty_per_enemy" : 0.08,
+        'bosses' : []
+    },
+
+    17 : {
+        'enemies' : {
+            'basic' : 12,
+            'elite' : 24,
+            'gunner' : 12,
+            'basic_boss' : 2,
+            'golden_boss' : 2,
+        },
+        "spawn_cooldown" : 0.8,
+        "spawn_rate_penalty_per_enemy" : 0.08,
+        'bosses' : []
+    },
+
+
+    18 : {
+        'enemies' : {
+            'basic' : 14,
+            'elite' : 28,
+            'gunner' : 14,
+            'basic_boss' : 2,
+            'golden_boss' : 2,
+        },
+        "spawn_cooldown" : 0.8,
+        "spawn_rate_penalty_per_enemy" : 0.08,
+        'bosses' : []
+    },
+
+
+    19 : {
+        'enemies' : {
+            'basic' : 16,
+            'elite' : 32,
+            'gunner' : 16,
+            'basic_boss' : 2,
+            'golden_boss' : 2,
+        },
+        "spawn_cooldown" : 0.8,
+        "spawn_rate_penalty_per_enemy" : 0.08,
+        'bosses' : []
+    },
+
+    20 : {
+        'enemies' : {
+            'basic' : 18,
+            'elite' : 36,
+            'gunner' : 18,
+            'basic_boss' : 2,
+            'golden_boss' : 2,
+        },
+        "spawn_cooldown" : 0.8,
+        "spawn_rate_penalty_per_enemy" : 0.08,
+        'bosses' : ['spaceship_boss']
+    },
 }
 
 SCORE_EVENT = pygame.event.custom_type()
@@ -313,7 +380,7 @@ class MainGameState(NormalGameState):
         if self.player.current_hp <= 0:
             self.transition_to_gameover()
         if self.control_script.is_over:
-            if self.wave_number >= 15:
+            if self.wave_number >= 20:
                 self.trasition_to_win()
             else:
                 self.transition_to_shop()
