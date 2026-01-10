@@ -6,6 +6,7 @@ You also get major upgrades right before the final boss
 
 --Necessary-- (Things i have to do now)
 -Do a lot of balancing
+-Maybe add a "help" tab in the menu?
 
 --High-- (Things I need to do before the end of the jam)
 (DONE)

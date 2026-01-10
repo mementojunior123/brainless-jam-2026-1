@@ -111,7 +111,7 @@ class Player(Sprite):
 
     DASH_COOLDOWN : float = 3
     DASH_DURATION : float = 0.3
-    DASH_INVULN_TIME : float = 0.22
+    DASH_INVULN_TIME : float = 0.26
 
     display_size : tuple[int, int] = core_object.main_display.get_size()
     def __init__(self) -> None:
@@ -394,24 +394,30 @@ class Player(Sprite):
         homing_targets=BaseEnemy, team=Teams.ALLIED, can_destroy=True, damage=damage, die_after_destroying=False,
         explosion_damage=damage * aoe_fraction, explosive_range=explosive_range)
     
-    def take_damage(self, damage : float):
+    def take_damage(self, damage : float) -> bool:
         if ((not self.invuln_timer.isover()) 
             or self.invincible 
             or isinstance(core_object.game.state, core_object.game.STATES.ShopGameState)
             or (self.dash_timer.get_time() < Player.DASH_INVULN_TIME)):
-            return
+            return False
         core_object.log(f"Player took damage : {damage}")
         self.current_hp -= damage
         self.invuln_timer.restart()
         core_object.bg_manager.play_sfx(Player.hit_sfx, 1.0)
+        return True
 
     def check_collision(self):
         colliding_projectiles : list[BaseProjectile] = [elem for elem in self.get_all_colliding(BaseProjectile) if elem.team in (Teams.ENEMY, Teams.FFA)]
         colliding_enemies : list[BaseEnemy] = self.get_all_colliding(BaseEnemy)
         for enemy in colliding_enemies:
-            self.take_damage(1)
+            took_damage : bool = self.take_damage(1)
             if isinstance(enemy, BaseNormalEnemy):
-                enemy.kill_instance()
+                if took_damage:
+                    enemy.kill_instance()
+                else:
+                    ParticleEffect.load_effect('enemy_killed').play(enemy.position.copy(), core_object.game.game_timer.get_time)
+                    core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
+                    enemy.give_score(enemy.KILL_SCORE)
         if self.dash_timer.get_time() < Player.DASH_INVULN_TIME:
             return
         for proj in colliding_projectiles:
