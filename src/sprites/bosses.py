@@ -216,6 +216,7 @@ class BasicBossEntryScript(CoroutineScript):
         if delta is None: delta = core_object.dt
         while not move_in_timer.isover():
             alpha : float = interpolation.smoothstep(move_in_timer.get_time() / move_in_timer.duration)
+            if alpha > 1: alpha = 1
             new_pos : pygame.Vector2 = start_position.lerp(target_position, alpha)
             unit.position = new_pos
             delta = yield
@@ -546,6 +547,7 @@ class GoldenBossEntryScript(CoroutineScript):
         if delta is None: delta = core_object.dt
         while not move_in_timer.isover():
             alpha : float = interpolation.smoothstep(move_in_timer.get_time() / move_in_timer.duration)
+            if alpha > 1: alpha = 1
             new_pos : pygame.Vector2 = start_position.lerp(target_position, alpha)
             unit.position = new_pos
             delta = yield
@@ -926,6 +928,7 @@ class SpaceshipBossEntryScript(CoroutineScript):
         if delta is None: delta = core_object.dt
         while not move_in_timer.isover():
             alpha : float = interpolation.smoothstep(move_in_timer.get_time() / move_in_timer.duration)
+            if alpha > 1: alpha = 1
             new_pos : pygame.Vector2 = start_position.lerp(target_position, alpha)
             unit.position = new_pos
             delta = yield
@@ -1440,6 +1443,7 @@ class FinalBossEntryScript(CoroutineScript):
         if delta is None: delta = core_object.dt
         while not move_in_timer.isover():
             alpha : float = interpolation.smoothstep(move_in_timer.get_time() / move_in_timer.duration)
+            if alpha > 1: alpha = 1
             new_pos : pygame.Vector2 = start_position.lerp(target_position, alpha)
             unit.position = new_pos
             delta = yield
@@ -1696,7 +1700,7 @@ class FinalBossSpecialShotScript(CoroutineScript):
             current_aggro +=  delta * proximity_buff
             if min_shot_cooldown.isover() and current_aggro >= aggro_required:
                 angle_offset : float = (pygame.Vector2(0, 1).angle_to(player.position - unit.position))
-                fired_rocket : bool = random.randint(1, 5) <= 2
+                fired_rocket : bool = True if random.randint(1, 4) <= 2 else False
                 if fired_rocket:
                     FinalBossSpecialShotScript.fire_homing(unit, angle_offset)
                 else:
@@ -1744,7 +1748,9 @@ class FinalBossSummonScript(CoroutineScript):
         while not delay.isover():
             delta = yield
         
-        BasicBoss.spawn()
+        b1 = BasicBoss.spawn()
+        b1.max_hp /= 3.5
+        b1.health = b1.max_hp
         cooldown_timer : Timer = Timer(0.4, time_source)
         for _ in range(10):
             while not cooldown_timer.isover():
@@ -1754,7 +1760,9 @@ class FinalBossSummonScript(CoroutineScript):
             FinalBossSummonScript.summon_enemy(unit, random.choice(candidates))
         while not cooldown_timer.isover():
             delta = yield
-        GoldenBoss.spawn()
+        b2 = GoldenBoss.spawn()
+        b2.max_hp /= 3.5
+        b2.health = b2.max_hp
         unit.image = FinalBoss.final_boss_image    
         delay.set_duration(0.5)
         while not delay.isover():

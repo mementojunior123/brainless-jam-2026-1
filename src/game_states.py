@@ -322,7 +322,7 @@ WAVE_DATA : dict[int, WaveData] = {
         },
         "spawn_cooldown" : 0.7,
         "spawn_rate_penalty_per_enemy" : 0.08,
-        'bosses' : ['spaceship_boss']
+        'bosses' : ['final_boss']
     },
 }
 

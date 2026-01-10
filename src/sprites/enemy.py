@@ -198,7 +198,9 @@ class BasicEnemyControlScript(CoroutineScript):
         unit.invincible = True
         if delta is None: delta = core_object.dt
         while not transition_timer.isover():
-            unit.position = start_position.lerp(target_position, interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration))
+            alpha : float = interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration)
+            if alpha > 1: alpha = 1
+            unit.position = start_position.lerp(target_position, alpha)
             delta = yield
         unit.position = target_position
         unit.invincible = False
@@ -308,7 +310,9 @@ class EliteEnemyControlScript(CoroutineScript):
         unit.invincible = True
         if delta is None: delta = core_object.dt
         while not transition_timer.isover():
-            unit.position = start_position.lerp(target_position, interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration))
+            alpha : float = interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration)
+            if alpha > 1: alpha = 1
+            unit.position = start_position.lerp(target_position, alpha)
             delta = yield
         unit.position = target_position
         unit.invincible = False
@@ -415,7 +419,9 @@ class GunnerEnemyControlScript(CoroutineScript):
         unit.invincible = True
         if delta is None: delta = core_object.dt
         while not transition_timer.isover():
-            unit.position = start_position.lerp(target_position, interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration))
+            alpha : float = interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration)
+            if alpha > 1: alpha = 1
+            unit.position = start_position.lerp(target_position, alpha)
             delta = yield
         unit.position = target_position
         unit.invincible = False
@@ -632,7 +638,9 @@ class RunnerEnemyControlScript(CoroutineScript):
         unit.invincible = True
         if delta is None: delta = core_object.dt
         while not transition_timer.isover():
-            unit.position = start_position.lerp(target_position, interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration))
+            alpha : float = interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration)
+            if alpha > 1: alpha = 1
+            unit.position = start_position.lerp(target_position, alpha)
             delta = yield
         unit.position = target_position
         unit.invincible = False

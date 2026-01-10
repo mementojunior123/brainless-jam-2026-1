@@ -131,6 +131,7 @@ class TransitionInScript(CoroutineScript):
 
         while not transition_timer.isover():
             alpha : float = interpolation.quad_ease_out(transition_timer.get_time() / transition_timer.duration)
+            if alpha > 1: alpha = 1
             card.position = start_position.lerp(target_position, alpha)
             delta = yield
         card.position = target_position
@@ -162,6 +163,7 @@ class WhenPickedScript(CoroutineScript):
 
         while not transition_timer.isover():
             alpha : float = interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration)
+            if alpha > 1: alpha = 1
             card.position = start_position.lerp(target_position, alpha)
             card_alpha : float = pygame.math.lerp(255, 0, alpha * 1.5, True)
             card.image.set_alpha(card_alpha)
@@ -195,6 +197,7 @@ class TransitionOutScript(CoroutineScript):
 
         while not transition_timer.isover():
             alpha : float = interpolation.quad_ease_in(transition_timer.get_time() / transition_timer.duration)
+            if alpha > 1: alpha = 1
             card.position = start_position.lerp(target_position, alpha)
             delta = yield
         card.position = target_position
