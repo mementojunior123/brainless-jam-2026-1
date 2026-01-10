@@ -351,7 +351,7 @@ class Player(Sprite):
             damage_mod = 1.5
             scatter_count = 2
             proj_count = 4
-        if self.upgrades['LazerSpecialist'] >= 2:
+        elif self.upgrades['LazerSpecialist'] >= 2:
             damage_decay = 0.65
             damage_mod = 1.0
             scatter_count = 2
