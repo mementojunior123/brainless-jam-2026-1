@@ -477,7 +477,7 @@ class GunnerEnemyMoveScript(CoroutineScript):
 
         move_timer : Timer = Timer(-1, time_source)
         direction : int = 1 if unit.position.x < centerx else -1
-        dodge_cooldown : Timer = Timer(0.75, time_source)
+        dodge_cooldown : Timer = Timer(0.6, time_source)
     
         delta = yield
         if delta is None: delta = core_object.dt
@@ -501,7 +501,7 @@ class GunnerEnemyMoveScript(CoroutineScript):
                         if GunnerEnemyMoveScript.predict_projectile_contact(
                         unit, proj, pygame.Vector2(direction * base_speed, 0), bounding_box):
                             dodge_cooldown.restart()
-                            if random.randint(1, 10) <= 4:
+                            if random.randint(1, 10) <= 6:
                                 direction *= -1
             delta = yield
 

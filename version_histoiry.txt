@@ -34,3 +34,9 @@ Version J08 (10-01-2026, 15:02):
 
 Version J09 (10-01-2026, 15:18):
     -Fixed a bug
+
+Version J10 (10-01-2026, 15:42):
+    -Made a few tweaks
+
+Version J11 (10-01-2026, 16:09)
+    -Made a few more tweaks related to difficulty

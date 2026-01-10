@@ -605,13 +605,13 @@ class ShopGameState(NormalGameState):
         section : int = (self.finished_wave - 1) // 5
         if self.finished_wave % 5 != 0:
             candidates = {
-                'RegularDamageBonus' : [0.4, 0.4, 0.4, 0.4][section],
-                'SpecialDamageMultipler' : [0.3, 0.3, 0.3, 0.3][section],
-                'AllDamageMultiplier' : [0.15, 0.15, 0.15, 0.15][section],
+                'RegularDamageBonus' : [0.5, 0.5, 0.5, 0.5][section],
+                'SpecialDamageMultipler' : [0.4, 0.4, 0.4, 0.4][section],
+                'AllDamageMultiplier' : [0.2, 0.2, 0.2, 0.2][section],
 
-                'RegularFirerateMultiplier' : [0.2, 0.2, 0.2, 0.2][section],
-                'SpecialFirerateMultiplier' : [0.2, 0.2, 0.2, 0.2][section],
-                'AllFirerateMultiplier' : [0.1, 0.1, 0.1, 0.1][section],
+                'RegularFirerateMultiplier' : [0.3, 0.3, 0.3, 0.3][section],
+                'SpecialFirerateMultiplier' : [0.3, 0.3, 0.3, 0.3][section],
+                'AllFirerateMultiplier' : [0.15, 0.15, 0.15, 0.15][section],
 
                 'MaxHealthBonus' : 1,
                 'HealHealth' : [2, 2, 3, 3][section],
