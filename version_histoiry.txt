@@ -28,3 +28,9 @@ Version J06 (10-01-2026, 13:48):
 
 Version J07 (10-01-2026, 14:33):
     -Made the game easier
+
+Version J08 (10-01-2026, 15:02):
+    -Fixed a few bugs
+
+Version J09 (10-01-2026, 15:18):
+    -Fixed a bug

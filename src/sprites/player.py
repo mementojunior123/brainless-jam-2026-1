@@ -424,6 +424,7 @@ class Player(Sprite):
                     ParticleEffect.load_effect('enemy_killed').play(enemy.position.copy(), core_object.game.game_timer.get_time)
                     core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
                     enemy.give_score(enemy.KILL_SCORE)
+                    enemy.kill_instance()
         if self.dash_timer.get_time() < Player.DASH_INVULN_TIME:
             return
         for proj in colliding_projectiles:
