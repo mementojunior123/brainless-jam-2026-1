@@ -360,6 +360,7 @@ class ScatterProjectile(BaseProjectile):
         self.bounces_left : int
         self.scatter_reflect : bool
         self.damage_decay : float
+        self.angle_offset : float
         ScatterProjectile.inactive_elements.append(self)
 
     @classmethod
@@ -369,7 +370,8 @@ class ScatterProjectile(BaseProjectile):
               zindex : int = 0, damage : float = 1, can_destroy : bool = False, destructible : bool = False, 
               die_after_destroying : bool = True, 
               bounce_count : int = 2, scatter_count : int = 1, scatter_proj_num : int = 3,
-              ignore : list["Sprite"]|None = None, scatter_reflect : bool = False, damage_decay : float = 1.0):
+              ignore : list["Sprite"]|None = None, scatter_reflect : bool = False, damage_decay : float = 1.0,
+              angle_offset : float = 0.0):
         element = cls.inactive_elements[0]
 
         element.image = custom_image
@@ -383,7 +385,7 @@ class ScatterProjectile(BaseProjectile):
         element.drag = drag if drag is not None else 0
         element.pivot = Pivot2D(element._position, element.image, element.image.get_colorkey() or (0, 255, 255))
         element.pivot.pivot_offset = pygame.Vector2(0, 0) if pivot_offset is None else pivot_offset
-        element.angle = angle
+        element.angle = angle + angle_offset
         element.team = team
 
         element.type = projectile_type
@@ -402,6 +404,7 @@ class ScatterProjectile(BaseProjectile):
         element.ignore = ignore or []
         element.scatter_reflect = scatter_reflect
         element.damage_decay = damage_decay
+        element.angle_offset = angle_offset
 
         cls.unpool(element)
         return element
@@ -448,12 +451,12 @@ class ScatterProjectile(BaseProjectile):
         for offset in self.generate_angle_offset_list(self.scatter_proj_num, not self.scatter_reflect):
             new_velocity : pygame.Vector2 = self.velocity.rotate(offset)
             new_velocity.scale_to_length(1)
-            new_position : pygame.Vector2 = point_of_contact + new_velocity * (self.rect.height // 2)
+            new_position : pygame.Vector2 = point_of_contact + new_velocity * (0)
             new_velocity.scale_to_length(velocity_magnitude)
             ScatterProjectile.spawn(new_position, new_velocity, self.acceleration, self.drag, pygame.Vector2(0, -1).angle_to(new_velocity),
                                     self.image, self.team, self.type, self.pivot.pivot_offset, self.zindex, self.damage * self.damage_decay,
                                     self.can_destroy, self.destructible, self.die_after_destroying, self.og_bounce_count,
-                                    self.scatter_count - 1, self.scatter_proj_num, self.ignore, self.scatter_reflect)
+                                    self.scatter_count - 1, self.scatter_proj_num, self.ignore, self.scatter_reflect, self.damage_decay, -self.angle)
     
     @staticmethod
     def generate_angle_offset_list(count : int, add_offset : bool = True) -> list[float]:
@@ -472,7 +475,7 @@ class ScatterProjectile(BaseProjectile):
         normal : pygame.Vector2 = (wall[1] - wall[0]).rotate(-90)
         normal.scale_to_length(1)
         self.velocity.reflect_ip(normal)
-        self.angle = self.get_velocity_orientation() or self.angle
+        self.angle = (self.get_velocity_orientation() or self.angle) + self.angle_offset
         while self.rect.clipline(wall):
             self.position += normal
             self.align_rect()
@@ -486,6 +489,7 @@ class ScatterProjectile(BaseProjectile):
         self.bounces_left = None
         self.scatter_reflect = None
         self.damage_decay = None
+        self.angle_offset = None
 
 Sprite.register_class(BaseProjectile)
 Sprite.register_class(NormalProjectile)
