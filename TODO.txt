@@ -7,17 +7,10 @@ You also get major upgrades right before the final boss
 --Necessary-- (Things i have to do now)
 -Finish boss #3
 -Add the final (fourth) boss
--Improve text aligment on weapon descriptions
+-Do a lot of balancing
 
 --High-- (Things I need to do before the end of the jam)
--Add more natural alerts instead of Game.alert_player()
--Improve weapon descriptions and make sure they are up to date
--Clarify some things about how the game works (dashing giving i-frames, upgrades applying to future alternate fires, etc.)
--Remove some player ui elements on player death
--Improve text aligment on weapon descriptions
-
--Add a fourth enemy type
--Do a lot of balancing
+(DONE)
 
 
 --Medium-- (Things I will add if I have time to spare)
@@ -39,6 +32,8 @@ You also get major upgrades right before the final boss
 -Add a confirmation for resetting high score
 -Add distinc sound effects for enemies shooting (currently using player sounds but slightly quieter)
 -Improve game over sequence and win sequence
+-Clarify some things about how the game works in-game instead of in the description
+-Add more natural alerts instead of Game.alert_player()
 
 --Low-- (Things I won't add in the game jam due to time constraints)
 -Settings

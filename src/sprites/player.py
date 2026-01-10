@@ -42,7 +42,7 @@ alternate_fire_base_stats : dict[int, AlternateFireBaseStatLine] = {
         'damage' : 1.5,
         'firerate' : 0.5,
         'name' : 'Shotgun',
-        'description' : 'A shotgun that fires\n5 pellets\nBase stats:\n1.5x5 damage\n0.5 shots/s'
+        'description' : 'A shotgun that\nfires 5 pellets\nBase stats:\n1.5 x 5 damage\n0.5 shots/s'
     },
     AlternateFireTypes.ROCKET.value : {
         'damage' : 4,
@@ -345,30 +345,25 @@ class Player(Sprite):
         scatter_count : int
         proj_count : int
         damage_decay : float
-        damage_mod : float
         if self.upgrades['LazerSpecialist'] >= 3:
-            damage_decay = 1.0
-            damage_mod = 1.5
+            damage_decay = 1.2
             scatter_count = 2
             proj_count = 4
         elif self.upgrades['LazerSpecialist'] >= 2:
             damage_decay = 0.65
-            damage_mod = 1.0
             scatter_count = 2
             proj_count = 4
         elif self.upgrades['LazerSpecialist'] >= 1:
             damage_decay = 0.5
-            damage_mod = 1.0
             scatter_count = 1
             proj_count = 4
         else:
             damage_decay = 0.0
-            damage_mod = 1.0
             scatter_count = 0
             proj_count = 0
         return ScatterProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -16), None, None, 0,
                                        recolor_image(BaseProjectile.normal_image3, "Purple"), team=Teams.ALLIED,
-                                       damage=damage * damage_mod, can_destroy=True, bounce_count=0, scatter_count=scatter_count,
+                                       damage=damage, can_destroy=True, bounce_count=0, scatter_count=scatter_count,
                                        scatter_proj_num=proj_count, scatter_reflect=True, damage_decay=damage_decay)
     
     def fire_shotgun(self, damage : int) -> list[NormalProjectile]:

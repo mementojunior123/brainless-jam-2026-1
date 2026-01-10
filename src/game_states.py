@@ -93,6 +93,7 @@ WAVE_DATA : dict[int, WaveData] = {
             'basic' : 5,
             'elite' : 3,
             'gunner' : 2,
+            'runner' : 1,
         },
         "spawn_cooldown" : 2.4,
         "spawn_rate_penalty_per_enemy" : 0.5,
@@ -456,6 +457,8 @@ class BasicWaveControlScript(CoroutineScript):
             EliteEnemy.spawn("midbottom", pygame.Vector2(x_level, -20))
         elif enemy_type == EnemyTypes.GUNNER.value:
             GunnerEnemy.spawn("midbottom", pygame.Vector2(x_level, -20))
+        elif enemy_type == EnemyTypes.RUNNER.value:
+            RunnerEnemy.spawn("midbottom", pygame.Vector2(x_level, -20))
         elif enemy_type == BossTypes.BASIC_BOSS.value:
             boss = BasicBoss.spawn()
             boss.max_hp = boss.max_hp // 1.5
@@ -831,8 +834,8 @@ class ShopControlScript(CoroutineScript):
                     case 1:
                         text = f"The lazer now\nsplits one more time\nand conserves 65%\n of the damage\neach split."
                     case 2:
-                        text = f"The lazer now\nno longer loses damage\neach split and\ndeals 50% more damage."
-                for i, line in enumerate(text):
+                        text = f"Instead of losing\n35% of the damage,\nthe lazer deals 20%\nmore damage each split."
+                for i, line in enumerate(text.split('\n')):
                     result.append((line, 100 + (DEFAULT_FONT_SIZE + 1) * i, DEFAULT_FONT_SIZE, "White"))
                 return result
             case 'ShotgunSpecialist':
@@ -842,10 +845,10 @@ class ShopControlScript(CoroutineScript):
                     case 0:
                         text = f"On hit, the\nshotgun shells split\nin three, dealing more\ndamage."
                     case 1:
-                        text = f"The shotgun shells now\nbounce of the edges\nof the screen twice,\ndealing even more damage"
+                        text = f"The shotgun shells now\nbounce of the edges\nof the screen twice,\ndealing even more damage."
                     case 2:
                         return [(f"Error:\nShotgun specialist III\ndoes not exist!", 50, DEFAULT_FONT_SIZE, "White")]
-                for i, line in enumerate(text):
+                for i, line in enumerate(text.split('\n')):
                     result.append((line, 100 + (DEFAULT_FONT_SIZE + 1) * i, DEFAULT_FONT_SIZE, "White"))
                 return result
             case 'RocketSpecialist':
@@ -858,7 +861,7 @@ class ShopControlScript(CoroutineScript):
                         return [(f"Error:\nRocket specialist II\ndoes not exist!", 50, DEFAULT_FONT_SIZE, "White")]
                     case 2:
                         return [(f"Error:\nRocket specialist III\ndoes not exist!", 50, DEFAULT_FONT_SIZE, "White")]
-                for i, line in enumerate(text):
+                for i, line in enumerate(text.split('\n')):
                     result.append((line, 100 + (DEFAULT_FONT_SIZE + 1) * i, DEFAULT_FONT_SIZE, "White"))
                 return result
             case _:
@@ -964,12 +967,15 @@ class GameOverControlScript(CoroutineScript):
         if delta is None: delta = core_object.dt
         while not timer.isover():
             delta = yield
+        player = Player.active_elements[0]
         if not state.lost:
             return "Done"
+        core_object.main_ui.remove(player.ui_alternate_fire_sprite)
+        core_object.main_ui.remove(player.ui_dash_sprite)
         timer.set_duration(2)
         core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)
-        ParticleEffect.load_effect('boss_killed').play(Player.active_elements[0].position, timer.get_time)
-        Player.active_elements[0].kill_instance()
+        ParticleEffect.load_effect('boss_killed').play(player.position, timer.get_time)
+        player.kill_instance()
         while not timer.isover():
             delta = yield
         return "Done"
@@ -1017,9 +1023,10 @@ def runtime_imports():
     import src.sprites.upgrade_card
     from src.sprites.upgrade_card import UpgradeCard
 
-    global BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType, BossTypes, BossType
+    global BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType, BossTypes, BossType, RunnerEnemy
     import src.sprites.enemy
-    from src.sprites.enemy import BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, EnemyTypes, EnemyType, BossTypes, BossType
+    from src.sprites.enemy import BaseEnemy, BasicEnemy, EliteEnemy, GunnerEnemy, RunnerEnemy
+    from src.sprites.enemy import EnemyTypes, EnemyType, BossTypes, BossType
     src.sprites.enemy.runtime_imports()
 
     global BasicBoss, BaseBoss, GoldenBoss, SpaceshipBoss

@@ -549,12 +549,131 @@ class GunnerEnemyShootingScript(CoroutineScript):
                 aggro_required = random.uniform(40, 80)
             delta = yield
 
+class RunnerEnemy(BaseNormalEnemy):
+    active_elements : list['RunnerEnemy'] = []
+    inactive_elements : list['RunnerEnemy'] = []
+    linked_classes : list['Sprite'] = [Sprite, BaseEnemy, BaseNormalEnemy]
+    BASE_SPEED : float = 7.0
+
+    runner_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/enemy/runner_enemy.png", (0, 255, 0))
+
+    KILL_SCORE : int = 10
+
+    def __init__(self):
+        super().__init__()
+        self.control_script : RunnerEnemyControlScript
+        self.speed : float
+        RunnerEnemy.inactive_elements.append(self)
+    
+    @classmethod
+    def spawn(cls, position_anchor : str, position : int|pygame.Vector2, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20):
+        element = cls.inactive_elements[0]
+
+        element.image = RunnerEnemy.runner_image
+        element.mask = pygame.mask.from_surface(element.image)
+        element.rect = element.image.get_rect()
+
+        element.position = pygame.Vector2(0, 0)
+        element.move_rect(position_anchor, position)
+        element.zindex = 0
+        element.current_camera = core_object.game.main_camera
+        element.invincible = False
+        element.control_script = RunnerEnemyControlScript()
+        element.control_script.initialize(core_object.game.game_timer.get_time, element, target_anchor, target_pos)
+        element.speed = RunnerEnemy.BASE_SPEED
+
+        element.type = 'runner'
+        element.health = 2
+
+        cls.unpool(element)
+        return element
+    
+    def update(self, delta: float):
+        if not self.control_script.is_over: self.control_script.process_frame(delta)
+        self.check_collisions()
+    
+    def fire_homing_projectile(self) -> HomingProjectile:
+        return HomingProjectile.spawn(self.position + pygame.Vector2(0, 30), pygame.Vector2(0, 8), None, None, 0,
+        BaseProjectile.rocket_image, homing_range=300, homing_rate=1,
+        homing_targets=Player, team=Teams.ENEMY)
+    
+    def fire_normal_projectile(self) -> NormalProjectile:
+        return NormalProjectile.spawn(self.position + pygame.Vector2(0, 30), pygame.Vector2(0, 8), None, None, 0,
+        recolor_image(BaseProjectile.normal_image3, "Red"),  team=Teams.ENEMY)
+    
+    def clean_instance(self):
+        super().clean_instance()
+        self.control_script = None
+        self.speed = None
+
+class RunnerEnemyControlScript(CoroutineScript):
+    def initialize(self, time_source : TimeSource, unit : RunnerEnemy, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20):
+        return super().initialize(time_source, unit, target_anchor, target_pos)
+    
+    def type_hints(self):
+        self.coro_attributes = []
+    
+    def process_frame(self, values : float) -> None|str:
+        return super().process_frame(values)
+    
+    @staticmethod
+    def corou(time_source : TimeSource, unit : RunnerEnemy, target_anchor : str = "top", target_pos : pygame.Vector2|int = 20) -> Generator[None, float, str]: #Yield, Send, Return
+        
+        screen_size = core_object.main_display.get_size()
+        screen_sizex, screen_sizey = screen_size
+        centerx, centery = screen_sizex // 2, screen_sizey // 2
+
+        start_position : pygame.Vector2 = unit.position.copy()
+        unit.move_rect(target_anchor, target_pos)
+        target_position : pygame.Vector2 = unit.position.copy()
+        unit.position = start_position
+        transition_timer : Timer = Timer(0.8, time_source)
+        delta = yield
+        unit.invincible = True
+        if delta is None: delta = core_object.dt
+        while not transition_timer.isover():
+            unit.position = start_position.lerp(target_position, interpolation.smoothstep(transition_timer.get_time() / transition_timer.duration))
+            delta = yield
+        unit.position = target_position
+        unit.invincible = False
+        
+        move_timer : Timer = Timer(-1, time_source)
+        shot_timer : Timer = Timer(1, time_source)
+        direction : int = 1 if unit.position.x < centerx else -1
+        base_speed = unit.speed
+        while True:
+            speed_percent = interpolation.quad_ease_out(pygame.math.clamp(move_timer.get_time() / 0.3, 0, 1))
+            actual_speed = pygame.math.lerp(0, base_speed, speed_percent)
+            unit.position += pygame.Vector2(direction * actual_speed * delta, 0)
+            if unit.rect.right > screen_sizex: 
+                unit.move_rect("right", screen_sizex)
+                break
+            if unit.rect.left < 0: 
+                unit.move_rect("left", 0)
+                break
+            delta = yield
+        while unit.rect.bottom < (screen_sizey - 10):
+            unit.position += pygame.Vector2(0, unit.speed * delta)
+            if unit.rect.bottom > (screen_sizey - 10):
+                unit.move_rect('bottom', screen_sizey - 10)
+            delta = yield
+
+        direction : int = 1 if unit.position.x < centerx else -1
+        while True:
+            unit.position += pygame.Vector2(direction * unit.speed * delta, 0)
+            if not unit.rect.colliderect(pygame.Rect(0, 0, *core_object.main_display.get_size())):
+                break
+            delta = yield
+        unit.kill_instance_safe()
+        return "Done"
+    
 class EnemyTypes(Enum):
     BASIC = 'basic'
     ELITE = 'elite'
     GUNNER = 'gunner'
+    RUNNER = 'runner'
 
-EnemyType : TypeAlias = Literal['basic', 'elite', 'gunner']
+EnemyType : TypeAlias = Literal['basic', 'elite', 'gunner', 'runner']
 
 class BossTypes(Enum):
     BASIC_BOSS = 'basic_boss'
@@ -573,8 +692,10 @@ Sprite.register_class(BaseNormalEnemy)
 Sprite.register_class(BasicEnemy)
 Sprite.register_class(EliteEnemy)
 Sprite.register_class(GunnerEnemy)
+Sprite.register_class(RunnerEnemy)
 for _ in range(30): BasicEnemy()
 for _ in range(20): EliteEnemy()
 for _ in range(20): GunnerEnemy()
+for _ in range(20) : RunnerEnemy()
 
 
