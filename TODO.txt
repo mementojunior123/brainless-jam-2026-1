@@ -10,6 +10,7 @@ You also get major upgrades right before the final boss
 -Fix text aligment on the weapon specialist upgrades
 -Improve text aligment on weapon descriptions
 -Fix a bug where lazers that scatter twice face the wrong way
+-Adjust boss healthbar position
 
 --High-- (Things I need to do before the end of the jam)
 -Add more natural alerts instead of Game.alert_player()
