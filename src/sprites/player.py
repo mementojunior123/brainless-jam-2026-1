@@ -142,7 +142,7 @@ class Player(Sprite):
         Player.inactive_elements.append(self)
     
     @staticmethod
-    def get_default_upgrades(start_weapon : int = AlternateFireTypes.SHOTGUN.value) -> Upgrades:
+    def get_default_upgrades(start_weapon : int = AlternateFireTypes.LAZER.value) -> Upgrades:
         return {
             'RegularDamageBonus' : 0,
             'SpecialDamageMultipler' : 1,
@@ -342,9 +342,34 @@ class Player(Sprite):
     
     def fire_lazer(self, damage : int) -> NormalProjectile:
         core_object.bg_manager.play_sfx(Player.lazer_shot_sfx, 1.0)
-        return NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -16), None, None, 0,
+        scatter_count : int
+        proj_count : int
+        damage_decay : float
+        damage_mod : float
+        if self.upgrades['LazerSpecialist'] >= 3:
+            damage_decay = 1.0
+            damage_mod = 1.0
+            scatter_count = 2
+            proj_count = 4
+        if self.upgrades['LazerSpecialist'] >= 2:
+            damage_decay = 0.5
+            damage_mod = 1.0
+            scatter_count = 2
+            proj_count = 4
+        elif self.upgrades['LazerSpecialist'] >= 1:
+            damage_decay = 0.5
+            damage_mod = 1.0
+            scatter_count = 1
+            proj_count = 4
+        else:
+            damage_decay = 0.0
+            damage_mod = 1.0
+            scatter_count = 0
+            proj_count = 0
+        return ScatterProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -16), None, None, 0,
                                        recolor_image(BaseProjectile.normal_image3, "Purple"), team=Teams.ALLIED,
-                                       damage=damage, can_destroy=True)
+                                       damage=damage * damage_mod, can_destroy=True, bounce_count=0, scatter_count=scatter_count,
+                                       scatter_proj_num=proj_count, scatter_reflect=True, damage_decay=damage_decay)
     
     def fire_shotgun(self, damage : int) -> list[NormalProjectile]:
         core_object.bg_manager.play_sfx(Player.shotgun_shot_sfx, 1.0)
@@ -361,13 +386,15 @@ class Player(Sprite):
         return proj_list
     
     def fire_rocket(self, damage : float) -> HomingProjectile:
+        explosive_range : float = 350 if self.upgrades['RocketSpecialist'] >= 1 else 250
+        aoe_fraction : float = 0.65 if self.upgrades['RocketSpecialist'] >= 1 else 0.50
         core_object.bg_manager.play_sfx(Player.rocket_shot_sfx, 1.0)
         return HomingProjectile.spawn(self.position + pygame.Vector2(0, -30), 
                                       pygame.Vector2(0, -10), 
                                       None, None, 0,
         BaseProjectile.rocket_image, homing_range=300, homing_rate=3,
         homing_targets=BaseEnemy, team=Teams.ALLIED, can_destroy=True, damage=damage, die_after_destroying=False,
-        explosion_damage=damage * 0.5, explosive_range=250)
+        explosion_damage=damage * aoe_fraction, explosive_range=explosive_range)
     
     def take_damage(self, damage : float):
         if ((not self.invuln_timer.isover()) 

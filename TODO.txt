@@ -5,20 +5,18 @@ You also get major upgrades right before the final boss
 
 
 --Necessary-- (Things i have to do now)
--Add boss #3
+-Finish boss #3
+-Add the final (fourth) boss
+-Add the text for the weapon specialist upgrades
 
 --High-- (Things I need to do before the end of the jam)
 -Add more natural alerts instead of Game.alert_player()
 -Improve weapon descriptions and make sure they are up to date
 -Clarify some things about how the game works (dashing giving i-frames, upgrades applying to future alternate fires, etc.)
 -Remove some player ui elements on player death
+-Add a fourth enemy type
+-Do a lot of balancing
 
--Do balancing and add more content
-    Weapon specialist upgrade : You can choose to upgrade your alternate fire instead of picking a new one in major upgrades
-    One more alternate fire
-    A fourth and final boss
-    A fourth regular enemy type
-    A feature that makes upgrades scale faster after the first and the second boss
 
 --Medium-- (Things I will add if I have time to spare)
 -Improve musical transitions

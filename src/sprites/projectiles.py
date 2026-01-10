@@ -358,6 +358,8 @@ class ScatterProjectile(BaseProjectile):
         self.scatter_proj_num : int
         self.ignore : list[Sprite]
         self.bounces_left : int
+        self.scatter_reflect : bool
+        self.damage_decay : float
         ScatterProjectile.inactive_elements.append(self)
 
     @classmethod
@@ -367,7 +369,7 @@ class ScatterProjectile(BaseProjectile):
               zindex : int = 0, damage : float = 1, can_destroy : bool = False, destructible : bool = False, 
               die_after_destroying : bool = True, 
               bounce_count : int = 2, scatter_count : int = 1, scatter_proj_num : int = 3,
-              ignore : list["Sprite"]|None = None):
+              ignore : list["Sprite"]|None = None, scatter_reflect : bool = False, damage_decay : float = 1.0):
         element = cls.inactive_elements[0]
 
         element.image = custom_image
@@ -398,6 +400,8 @@ class ScatterProjectile(BaseProjectile):
         element.scatter_count = scatter_count
         element.scatter_proj_num = scatter_proj_num
         element.ignore = ignore or []
+        element.scatter_reflect = scatter_reflect
+        element.damage_decay = damage_decay
 
         cls.unpool(element)
         return element
@@ -436,25 +440,26 @@ class ScatterProjectile(BaseProjectile):
         if self.scatter_count <= 0:
             return
         overlap_point : tuple[int, int] = self.mask.overlap(self.mask, (self.rect.x - hit.rect.x, self.rect.y - hit.rect.y)) or (self.rect.width // 2, self.rect.height // 2)
-        point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
+        point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point) if not self.scatter_reflect else hit.position
         ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
         velocity_angle : float = self.get_velocity_orientation()
         if velocity_angle is None: return
         velocity_magnitude : float = self.velocity.magnitude()
-        for offset in self.generate_angle_offset_list(self.scatter_proj_num):
+        for offset in self.generate_angle_offset_list(self.scatter_proj_num, not self.scatter_reflect):
             new_velocity : pygame.Vector2 = self.velocity.rotate(offset)
             new_velocity.scale_to_length(1)
             new_position : pygame.Vector2 = point_of_contact + new_velocity * (self.rect.height // 2)
             new_velocity.scale_to_length(velocity_magnitude)
             ScatterProjectile.spawn(new_position, new_velocity, self.acceleration, self.drag, pygame.Vector2(0, -1).angle_to(new_velocity),
-                                    self.image, self.team, self.type, self.pivot.pivot_offset, self.zindex, self.damage,
+                                    self.image, self.team, self.type, self.pivot.pivot_offset, self.zindex, self.damage * self.damage_decay,
                                     self.can_destroy, self.destructible, self.die_after_destroying, self.og_bounce_count,
-                                    self.scatter_count - 1, self.scatter_proj_num, self.ignore)
+                                    self.scatter_count - 1, self.scatter_proj_num, self.ignore, self.scatter_reflect)
     
     @staticmethod
-    def generate_angle_offset_list(count : int) -> list[float]:
+    def generate_angle_offset_list(count : int, add_offset : bool = True) -> list[float]:
         gap : float = 360 / count
-        return [gap / 2 + (i * gap) for i in range(count)]
+        init_offset : float = gap / 2 if add_offset else 0
+        return [init_offset + (i * gap) for i in range(count)]
     
     def get_velocity_orientation(self) -> float|None:
         if self.velocity.magnitude() <= 0:
@@ -479,6 +484,8 @@ class ScatterProjectile(BaseProjectile):
         self.scatter_count = None
         self.ignore = None
         self.bounces_left = None
+        self.scatter_reflect = None
+        self.damage_decay = None
 
 Sprite.register_class(BaseProjectile)
 Sprite.register_class(NormalProjectile)
