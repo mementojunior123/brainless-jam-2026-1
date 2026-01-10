@@ -25,3 +25,6 @@ Version J06 (10-01-2026, 13:48):
     -Added the final boss
     -Added a new enemy type
     -Made a few balance changes
+
+Version J07 (10-01-2026, 14:33):
+    -Made the game easier
