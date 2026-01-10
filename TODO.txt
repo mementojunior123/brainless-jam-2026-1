@@ -7,7 +7,8 @@ You also get major upgrades right before the final boss
 --Necessary-- (Things i have to do now)
 -Finish boss #3
 -Add the final (fourth) boss
--Add the text for the weapon specialist upgrades
+-Fix text aligment on the weapon specialist upgrades
+-Improve text aligment on weapon descriptions
 
 --High-- (Things I need to do before the end of the jam)
 -Add more natural alerts instead of Game.alert_player()
