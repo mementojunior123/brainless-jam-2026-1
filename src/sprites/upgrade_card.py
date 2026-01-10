@@ -7,7 +7,7 @@ from framework.utils.my_timer import Timer, TimeSource
 from typing import Generator
 import framework.utils.interpolation as interpolation
 from framework.utils.ui.textsprite import TextSprite
-from src.sprites.projectiles import BaseProjectile, Teams
+from src.sprites.projectiles import BaseProjectile, Teams, ScatterProjectile
 
 CARD_DIMENSIONS : int = (280, 350)
 
@@ -85,7 +85,7 @@ class UpgradeCard(Sprite):
     
     def check_collisions(self) -> bool:
         for proj in self.get_all_rect_colliding(BaseProjectile):
-            if proj.team == Teams.ALLIED:
+            if proj.team == Teams.ALLIED and not isinstance(proj, ScatterProjectile):
                 return True
         return False
     

@@ -6,7 +6,7 @@ from framework.utils.my_timer import Timer, TimeSource
 from framework.core.core import core_object
 from framework.game.coroutine_scripts import CoroutineScript
 import src.sprites.projectiles
-from src.sprites.projectiles import NormalProjectile, BaseProjectile, HomingProjectile, Teams
+from src.sprites.projectiles import NormalProjectile, BaseProjectile, HomingProjectile, Teams, ScatterProjectile
 import src.sprites.enemy
 from src.sprites.enemy import BaseEnemy, BaseNormalEnemy
 from enum import Enum
@@ -21,7 +21,8 @@ class AlternateFireTypes(Enum):
 UpgradeType : TypeAlias = Literal['RegularDamageBonus', 'SpecialDamageMultipler', 'AllDamageMultiplier',
                                   'RegularFirerateMultiplier', 'SpecialFirerateMultiplier', 'AllFirerateMultiplier',
                                   'AlternateFireType', 'MaxHealthBonus', 'HealHealth', 'HealMax',
-                                  'DashRechargeRate']
+                                  'DashRechargeRate',
+                                  'LazerSpecialist', 'ShotgunSpecialist', 'RocketSpecialist']
 
 class AlternateFireBaseStatLine(TypedDict):
     damage : float
@@ -66,6 +67,10 @@ class Upgrades(TypedDict):
 
     MaxHealthBonus : int
     DashRechargeRate : float
+
+    LazerSpecialist : int
+    ShotgunSpecialist : int
+    RocketSpecialist : int
 
 class Player(Sprite):
     active_elements : list['Player'] = []
@@ -137,7 +142,7 @@ class Player(Sprite):
         Player.inactive_elements.append(self)
     
     @staticmethod
-    def get_default_upgrades(start_weapon : int = AlternateFireTypes.LAZER.value) -> Upgrades:
+    def get_default_upgrades(start_weapon : int = AlternateFireTypes.SHOTGUN.value) -> Upgrades:
         return {
             'RegularDamageBonus' : 0,
             'SpecialDamageMultipler' : 1,
@@ -153,6 +158,10 @@ class Player(Sprite):
             
             'MaxHealthBonus' : 0,
             'DashRechargeRate' : 1.0,
+
+            'LazerSpecialist' : 0,
+            'ShotgunSpecialist' : 0,
+            'RocketSpecialist' : 0,
         }
 
     @classmethod
@@ -340,11 +349,14 @@ class Player(Sprite):
     def fire_shotgun(self, damage : int) -> list[NormalProjectile]:
         core_object.bg_manager.play_sfx(Player.shotgun_shot_sfx, 1.0)
         proj_list : list[NormalProjectile] = []
+        bounce_count = 2 if self.upgrades['ShotgunSpecialist'] >= 2 else 0
+        scatter_count = 1 if self.upgrades['ShotgunSpecialist'] >= 1 else 0
         for angle in (-20, -10, 0, 10, 20):
             proj_list.append(
-                NormalProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -16).rotate(angle),
+                ScatterProjectile.spawn(self.position + pygame.Vector2(0, -30), pygame.Vector2(0, -16).rotate(angle),
                         None, None, angle, recolor_image(BaseProjectile.normal_image4, "White"), team=Teams.ALLIED,
-                        damage=damage, can_destroy=True)
+                        damage=damage, can_destroy=True, scatter_count=scatter_count, bounce_count=bounce_count,
+                        scatter_proj_num=3)
             )
         return proj_list
     

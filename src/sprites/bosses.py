@@ -28,6 +28,7 @@ class BaseBoss(BaseEnemy):
         self.take_damage(projectile.damage)
         overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
         point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
+        self.health_bar.visible = True
         if self.health <= 0:
             core_object.main_ui.remove(self.health_bar)
             pass
@@ -108,7 +109,7 @@ class BasicBoss(BaseBoss):
         bar_image : pygame.Surface = pygame.Surface(BAR_DIMENSIONS)
         bar_image.fill(self.get_healthbar_color(1.0))
         bar_image.set_colorkey((0, 255, 255))
-        new_sprite : UiSprite = UiSprite(bar_image, bar_image.get_rect(midbottom = self.rect.midtop + pygame.Vector2(10, 0)),
+        new_sprite : UiSprite = UiSprite(bar_image, bar_image.get_rect(midbottom = self.rect.midtop + pygame.Vector2(0, -10)),
                                          -1, 'boss_healthbar')
         return new_sprite
     
@@ -119,7 +120,7 @@ class BasicBoss(BaseBoss):
         bar_height : int = self.health_bar.rect.height
         bar_width : int = int(pygame.math.lerp(0, max_width, health_percentage))
         pygame.draw.rect(self.health_bar.surf, self.get_healthbar_color(health_percentage), (0, 0, bar_width, bar_height))
-        self.health_bar.rect.midbottom = self.rect.midtop + pygame.Vector2(0, -5)
+        self.health_bar.rect.midbottom = self.rect.midtop + pygame.Vector2(0, -10)
     
     def update(self, delta: float):
         next_script = self.control_script.process_frame(delta)
@@ -433,7 +434,7 @@ class GoldenBoss(BaseBoss):
         bar_image : pygame.Surface = pygame.Surface(BAR_DIMENSIONS)
         bar_image.fill(self.get_healthbar_color(1.0))
         bar_image.set_colorkey((0, 255, 255))
-        new_sprite : UiSprite = UiSprite(bar_image, bar_image.get_rect(midbottom = self.rect.midtop + pygame.Vector2(10, 0)),
+        new_sprite : UiSprite = UiSprite(bar_image, bar_image.get_rect(midbottom = self.rect.midtop + pygame.Vector2(0, -10)),
                                          -1, 'boss_healthbar')
         return new_sprite
     
@@ -444,7 +445,7 @@ class GoldenBoss(BaseBoss):
         bar_height : int = self.health_bar.rect.height
         bar_width : int = int(pygame.math.lerp(0, max_width, health_percentage))
         pygame.draw.rect(self.health_bar.surf, self.get_healthbar_color(health_percentage), (0, 0, bar_width, bar_height))
-        self.health_bar.rect.midbottom = self.rect.midtop + pygame.Vector2(0, -5)
+        self.health_bar.rect.midbottom = self.rect.midtop + pygame.Vector2(0, -10)
     
     def update(self, delta: float):
         next_script = self.control_script.process_frame(delta)
@@ -811,7 +812,7 @@ class SpaceshipBoss(BaseBoss):
         bar_image : pygame.Surface = pygame.Surface(BAR_DIMENSIONS)
         bar_image.fill(self.get_healthbar_color(1.0))
         bar_image.set_colorkey((0, 255, 255))
-        new_sprite : UiSprite = UiSprite(bar_image, bar_image.get_rect(midbottom = self.rect.midtop + pygame.Vector2(10, 0)),
+        new_sprite : UiSprite = UiSprite(bar_image, bar_image.get_rect(midbottom = self.rect.midtop + pygame.Vector2(0, -10)),
                                          -1, 'boss_healthbar')
         return new_sprite
     
@@ -822,7 +823,7 @@ class SpaceshipBoss(BaseBoss):
         bar_height : int = self.health_bar.rect.height
         bar_width : int = int(pygame.math.lerp(0, max_width, health_percentage))
         pygame.draw.rect(self.health_bar.surf, self.get_healthbar_color(health_percentage), (0, 0, bar_width, bar_height))
-        self.health_bar.rect.midbottom = self.rect.midtop + pygame.Vector2(0, -5)
+        self.health_bar.rect.midbottom = self.rect.midtop + pygame.Vector2(0, -10)
     
     def update(self, delta: float):
         next_script = self.control_script.process_frame(delta)

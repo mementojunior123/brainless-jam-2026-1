@@ -7,7 +7,7 @@ from framework.core.core import core_object
 from framework.game.coroutine_scripts import CoroutineScript
 import src.sprites.projectiles
 from src.game_states import SCORE_EVENT
-from src.sprites.projectiles import NormalProjectile, BaseProjectile, HomingProjectile, Teams
+from src.sprites.projectiles import NormalProjectile, BaseProjectile, HomingProjectile, Teams, ScatterProjectile
 import random
 from enum import Enum
 from framework.utils.particle_effects import ParticleEffect
@@ -82,10 +82,15 @@ class BaseEnemy(Sprite):
         colliding_projectiles : list[BaseProjectile] = [elem for elem in self.get_all_colliding(BaseProjectile) if elem.team in (Teams.ALLIED, Teams.FFA)]
         if colliding_projectiles:
             for elem in colliding_projectiles:
+                if isinstance(elem, ScatterProjectile):
+                    if self in elem.ignore:
+                        continue
                 self.when_hit(elem)
                 if isinstance(elem, HomingProjectile):
                     if elem.explosive_range:
                         elem.explode(self)
+                elif isinstance(elem, ScatterProjectile):
+                    elem.scatter(self)
                 elem.kill_instance()
                 if self._zombie:
                     break

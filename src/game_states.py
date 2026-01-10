@@ -259,7 +259,7 @@ class MainGameState(NormalGameState):
         self._score = new_val
         self.score_sprite.text = f"Score : {self._score}"
 
-    def __init__(self, game_object : "Game", prev_main_state : Union["MainGameState", None] = None, wave_num : int = 14):
+    def __init__(self, game_object : "Game", prev_main_state : Union["MainGameState", None] = None, wave_num : int = 1):
         self.game : Game = game_object
         self.player : Player
         self.screen_size : tuple[int, int]
@@ -493,30 +493,64 @@ class ShopGameState(NormalGameState):
         self.major_upgrade : bool = True if self.finished_wave % 5 == 0 else False
         self.control_script.initialize(self.game.game_timer.get_time, self.candidates, self.prev.player, self)
         self.game.alert_player("Shop entered!")
+    
+    @staticmethod
+    def get_specialist_type(player : "Player") -> "UpgradeType":
+        match player.upgrades['AlternateFireType']:
+            case AlternateFireTypes.LAZER.value:
+                return 'LazerSpecialist'
+            case AlternateFireTypes.SHOTGUN.value:
+                return 'ShotgunSpecialist'
+            case AlternateFireTypes.ROCKET.value:
+                return 'RocketSpecialist'
+            case _:
+                core_object.log(f"Alternate fire type {player.upgrades['AlternateFireType']} does not exsist!")
+                return None
 
     def pick_candidates(self, count : int = 3) -> dict["UpgradeType", float|int]:
         candidates : dict[UpgradeType, float|int]
-        secion : int = (self.finished_wave - 1) // 5
+        section : int = (self.finished_wave - 1) // 5
         if self.finished_wave % 5 != 0:
             candidates = {
-                'RegularDamageBonus' : [0.4, 0.4, 0.4][secion],
-                'SpecialDamageMultipler' : [0.3, 0.3, 0.3][secion],
-                'AllDamageMultiplier' : [0.15, 0.15, 0.15][secion],
+                'RegularDamageBonus' : [0.4, 0.4, 0.4, 0.4][section],
+                'SpecialDamageMultipler' : [0.3, 0.3, 0.3, 0.3][section],
+                'AllDamageMultiplier' : [0.15, 0.15, 0.15, 0.15][section],
 
-                'RegularFirerateMultiplier' : [0.2, 0.2, 0.2][secion],
-                'SpecialFirerateMultiplier' : [0.2, 0.2, 0.2][secion],
-                'AllFirerateMultiplier' : [0.1, 0.1, 0.1][secion],
+                'RegularFirerateMultiplier' : [0.2, 0.2, 0.2, 0.2][section],
+                'SpecialFirerateMultiplier' : [0.2, 0.2, 0.2, 0.2][section],
+                'AllFirerateMultiplier' : [0.1, 0.1, 0.1, 0.1][section],
 
                 'MaxHealthBonus' : 1,
-                'HealHealth' : [2, 2, 3][secion],
+                'HealHealth' : [2, 2, 3, 3][section],
                 'DashRechargeRate' : 0.25,
             }
         else:
-            candidates = {
-                'AllDamageMultiplier' : 0.5,
-                'AllFirerateMultiplier' : 0.5,
-                'AlternateFireType' : [AlternateFireTypes.SHOTGUN.value, AlternateFireTypes.ROCKET.value][secion]
-            }
+            specialist_type : UpgradeType = self.get_specialist_type(self.prev.player)
+            if section == 0:
+                candidates = {
+                    random.choice(['AllDamageMultiplier', 'AllFirerateMultiplier']) : 0.5,
+                    'AlternateFireType' : AlternateFireTypes.SHOTGUN.value,
+                    specialist_type : 1,
+                }
+            elif section == 1:
+                candidates = {
+                    random.choice(['AllDamageMultiplier', 'AllFirerateMultiplier']) : 0.5,
+                    'AlternateFireType' : AlternateFireTypes.SHOTGUN.value,
+                    specialist_type : 1,
+                }
+            elif section == 2:
+                candidates = {
+                    'AllDamageMultiplier' : 0.5,
+                    'AllFirerateMultiplier' : 0.5,
+                    specialist_type : 1
+                }
+            elif section == 3:
+                core_object.log("An error has occured!")
+                candidates = {
+                    'AllDamageMultiplier' : 0.5,
+                    'AllFirerateMultiplier' : 0.5,
+                    'MaxHealthBonus' : 2,
+                }
         if self.prev.player.current_hp == self.prev.player.max_hp:
             if 'HealHealth' in candidates:
                 candidates.pop('HealHealth')
@@ -563,6 +597,8 @@ class ShopGameState(NormalGameState):
             case 'SpecialDamageMultipler':
                 player.upgrades[upgrade_type] += upgrade_value
             case 'SpecialFirerateMultiplier':
+                player.upgrades[upgrade_type] += upgrade_value
+            case 'LazerSpecialist'|'RocketSpecialist'|'ShotgunSpecialist':
                 player.upgrades[upgrade_type] += upgrade_value
             case _:
                 player.upgrades[upgrade_type] += upgrade_value
@@ -671,7 +707,8 @@ class ShopControlScript(CoroutineScript):
                 return f"{old_firerate_damage:.2f}/s --> {new_special_firerate:.2f}/s"
             case 'DashRechargeRate':
                 return f"{Player.DASH_COOLDOWN / player.upgrades['DashRechargeRate']:.2f}s --> {Player.DASH_COOLDOWN / (player.upgrades['DashRechargeRate'] + upgrade_value):.2f}s"
-    
+            case _:
+                return ""
     @staticmethod
     def format_card_text(upgrade_type : "UpgradeType", upgrade_value : int|float, player : "Player") -> list[tuple[str, int, int|str, ColorType]]:
         DEFAULT_FONT_SIZE : int = 31
@@ -718,7 +755,39 @@ class ShopControlScript(CoroutineScript):
             case 'SpecialFirerateMultiplier':
                 return [(f"Increase special attack\nfirerate by {upgrade_value:.0%}", 50, DEFAULT_FONT_SIZE, "White"),
                         (improvement_text, 200, DEFAULT_FONT_SIZE, "Purple")]
-
+            case 'LazerSpecialist':
+                new_level : int = player.upgrades['LazerSpecialist'] + 1
+                result = [(f"Lazer specialist {'I' * new_level}:", 50, DEFAULT_FONT_SIZE, "White")]
+                match player.upgrades['LazerSpecialist']:
+                    case 0:
+                        ...
+                    case 1:
+                        ...
+                    case 2:
+                        ...
+                return result
+            case 'ShotgunSpecialist':
+                new_level : int = player.upgrades['ShotgunSpecialist'] + 1
+                result = [(f"Shotgun specialist {'I' * new_level}:", 50, DEFAULT_FONT_SIZE, "White")]
+                match player.upgrades['ShotgunSpecialist']:
+                    case 0:
+                        ...
+                    case 1:
+                        ...
+                    case 2:
+                        return [(f"Error:\nShotgun specialist III\ndoes not exist!", 50, DEFAULT_FONT_SIZE, "White")]
+                return result
+            case 'RocketSpecialist':
+                new_level : int = player.upgrades['RocketSpecialist'] + 1
+                result = [(f"Rocket specialist {'I' * new_level}:", 50, DEFAULT_FONT_SIZE, "White")]
+                match player.upgrades['RocketSpecialist']:
+                    case 0:
+                        result.append((f"Increase explosive range", 100, DEFAULT_FONT_SIZE, "White"))
+                    case 1:
+                        return [(f"Error:\nRocket specialist II\ndoes not exist!", 50, DEFAULT_FONT_SIZE, "White")]
+                    case 2:
+                        return [(f"Error:\nRocket specialist III\ndoes not exist!", 50, DEFAULT_FONT_SIZE, "White")]
+                return result
             case _:
                 return [("Unknown upgrade", 50, DEFAULT_FONT_SIZE), (upgrade_type, 100, DEFAULT_FONT_SIZE), (str(upgrade_value), 150, DEFAULT_FONT_SIZE)]
 

@@ -2,7 +2,7 @@ import pygame
 from framework.game.sprite import Sprite
 from framework.core.core import core_object
 from framework.utils.pivot_2d import Pivot2D
-from framework.utils.helpers import sign, load_alpha_to_colorkey, ColorType
+from framework.utils.helpers import sign, load_alpha_to_colorkey, ColorType, remove_image_empty
 from enum import Enum
 from inspect import isclass
 from typing import Union
@@ -24,13 +24,14 @@ class BaseProjectile(Sprite):
 
     rocket_image : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/rocket.png", (0, 255, 0))
 
-    normal_image1 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_1-white.png", (0, 255, 0))
-    normal_image2 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_2-white.png", (0, 255, 0))
-    normal_image3 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_3-white.png", (0, 255, 0))
-    normal_image4 : pygame.Surface = load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_4-white.png", (0, 255, 0))
-
+    normal_image1 : pygame.Surface = remove_image_empty(load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_1-white.png", (0, 255, 0)))
+    normal_image2 : pygame.Surface = remove_image_empty(load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_2-white.png", (0, 255, 0)))
+    normal_image3 : pygame.Surface = remove_image_empty(load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_3-white.png", (0, 255, 0)))
+    normal_image4 : pygame.Surface = remove_image_empty(load_alpha_to_colorkey("assets/graphics/projectiles/normal_projectile_4-white.png", (0, 255, 0))
+)
     explosion_sfx1 : pygame.Sound = pygame.Sound("assets/audio/sfx/explosion1.ogg")
     explosion_sfx1.set_volume(0.7)
+    bounding_box : pygame.Rect = pygame.Rect(0, 0, *core_object.main_display.get_size())
 
     def __init__(self) -> None:
         super().__init__()
@@ -345,14 +346,152 @@ class HomingProjectile(BaseProjectile):
         self.explosive_range = None
         self.explosive_damage = None
 
+class ScatterProjectile(BaseProjectile):
+    active_elements : list['ScatterProjectile'] = []
+    inactive_elements : list['ScatterProjectile'] = []
+    linked_classes : list['Sprite'] = [Sprite, BaseProjectile]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.og_bounce_count : int
+        self.scatter_count : int
+        self.scatter_proj_num : int
+        self.ignore : list[Sprite]
+        self.bounces_left : int
+        ScatterProjectile.inactive_elements.append(self)
+
+    @classmethod
+    def spawn(cls, new_pos : pygame.Vector2, velocity : pygame.Vector2|None, accel : pygame.Vector2|None, drag : float|None, angle : float,
+              custom_image : pygame.Surface, team : Teams = Teams.PACIFIST, 
+              projectile_type : str = "", pivot_offset : pygame.Vector2|None = None,
+              zindex : int = 0, damage : float = 1, can_destroy : bool = False, destructible : bool = False, 
+              die_after_destroying : bool = True, 
+              bounce_count : int = 2, scatter_count : int = 1, scatter_proj_num : int = 3,
+              ignore : list["Sprite"]|None = None):
+        element = cls.inactive_elements[0]
+
+        element.image = custom_image
+        element.rect = element.image.get_rect()
+        element.position = new_pos
+        element.align_rect()
+        element.zindex = zindex
+
+        element.velocity = velocity if velocity and velocity.magnitude() > 0 else pygame.Vector2(0, 0)
+        element.acceleration = accel if accel and accel.magnitude() > 0 else pygame.Vector2(0, 0)
+        element.drag = drag if drag is not None else 0
+        element.pivot = Pivot2D(element._position, element.image, element.image.get_colorkey() or (0, 255, 255))
+        element.pivot.pivot_offset = pygame.Vector2(0, 0) if pivot_offset is None else pivot_offset
+        element.angle = angle
+        element.team = team
+
+        element.type = projectile_type
+        element.mask = pygame.mask.from_surface(element.image)
+        element.was_onscreen_once = False
+        element.damage = damage
+
+        element.can_destroy = can_destroy
+        element.destructible = destructible
+        element.die_after_destroying = die_after_destroying
+
+        element.og_bounce_count = bounce_count
+        element.bounces_left = bounce_count
+        element.scatter_count = scatter_count
+        element.scatter_proj_num = scatter_proj_num
+        element.ignore = ignore or []
+
+        cls.unpool(element)
+        return element
+    
+    def update(self, delta : float):
+        if self._zombie:
+            return
+        self.velocity *=  ((1 - self.drag) ** delta) ** 0.5
+
+        self.velocity += self.acceleration * 0.5 * delta
+        self.position += self.velocity * delta
+        self.velocity += self.acceleration * 0.5 * delta
+
+        self.velocity *=  ((1 - self.drag) ** delta) ** 0.5
+        walls : list[tuple[pygame.Vector2, pygame.Vector2]] = [
+            (pygame.Vector2(0, 0), pygame.Vector2(0, BaseProjectile.bounding_box.height)),
+            (pygame.Vector2(0, BaseProjectile.bounding_box.height), pygame.Vector2(*BaseProjectile.bounding_box.size)),
+            (pygame.Vector2(*BaseProjectile.bounding_box.size), pygame.Vector2(BaseProjectile.bounding_box.width, 0)),
+            (pygame.Vector2(BaseProjectile.bounding_box.width, 0), pygame.Vector2(0, 0)),
+        ]
+        for wall in walls:
+            if (self.bounces_left <= 0) and (self.og_bounce_count >= 0):
+                break
+            if self.rect.clipline(*wall):
+                self.bounce(wall)
+        if not self.rect.colliderect((0, 0, *core_object.main_display.get_size())):
+            if self.was_onscreen_once:
+                self.kill_instance_safe()
+        else:
+            self.was_onscreen_once = True
+        if not self._zombie:
+            self.check_destruction()
+    
+    def scatter(self, hit : "BaseEnemy"):
+        self.ignore.append(hit)
+        if self.scatter_count <= 0:
+            return
+        overlap_point : tuple[int, int] = self.mask.overlap(self.mask, (self.rect.x - hit.rect.x, self.rect.y - hit.rect.y)) or (self.rect.width // 2, self.rect.height // 2)
+        point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
+        ParticleEffect.load_effect('enemy_damaged').play(point_of_contact, core_object.game.game_timer.get_time)
+        velocity_angle : float = self.get_velocity_orientation()
+        if velocity_angle is None: return
+        velocity_magnitude : float = self.velocity.magnitude()
+        for offset in self.generate_angle_offset_list(self.scatter_proj_num):
+            new_velocity : pygame.Vector2 = self.velocity.rotate(offset)
+            new_velocity.scale_to_length(1)
+            new_position : pygame.Vector2 = point_of_contact + new_velocity * (self.rect.height // 2)
+            new_velocity.scale_to_length(velocity_magnitude)
+            ScatterProjectile.spawn(new_position, new_velocity, self.acceleration, self.drag, pygame.Vector2(0, -1).angle_to(new_velocity),
+                                    self.image, self.team, self.type, self.pivot.pivot_offset, self.zindex, self.damage,
+                                    self.can_destroy, self.destructible, self.die_after_destroying, self.og_bounce_count,
+                                    self.scatter_count - 1, self.scatter_proj_num, self.ignore)
+    
+    @staticmethod
+    def generate_angle_offset_list(count : int) -> list[float]:
+        gap : float = 360 / count
+        return [gap / 2 + (i * gap) for i in range(count)]
+    
+    def get_velocity_orientation(self) -> float|None:
+        if self.velocity.magnitude() <= 0:
+            return None
+        else:
+            return pygame.Vector2(0, -1).angle_to(self.velocity)
+    
+    def bounce(self, wall : tuple[pygame.Vector2, pygame.Vector2]):
+        self.bounces_left -= 1
+        normal : pygame.Vector2 = (wall[1] - wall[0]).rotate(-90)
+        normal.scale_to_length(1)
+        self.velocity.reflect_ip(normal)
+        self.angle = self.get_velocity_orientation() or self.angle
+        while self.rect.clipline(wall):
+            self.position += normal
+            self.align_rect()
+    
+    def clean_instance(self):
+        super().clean_instance()
+        self.scatter_proj_num = None
+        self.og_bounce_count = None
+        self.scatter_count = None
+        self.ignore = None
+        self.bounces_left = None
+
 Sprite.register_class(BaseProjectile)
 Sprite.register_class(NormalProjectile)
 Sprite.register_class(HomingProjectile)
+Sprite.register_class(ScatterProjectile)
 for _ in range(200):
     NormalProjectile()
 
 for _ in range(50):
     HomingProjectile()
+
+for _ in range(50):
+    ScatterProjectile()
 
 def runtime_imports():
     global src
