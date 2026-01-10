@@ -141,7 +141,7 @@ class BasicBoss(BaseBoss):
         homing_targets=Player, team=Teams.ENEMY)
     
     def fire_normal_projectile(self, angle : float = 0) -> NormalProjectile:
-        return NormalProjectile.spawn(self.position + pygame.Vector2(0, self.rect.height // 2 + 10), pygame.Vector2(0, 8).rotate(angle), 
+        return NormalProjectile.spawn(self.position + pygame.Vector2(0, self.rect.height // 2 - 10), pygame.Vector2(0, 8).rotate(angle), 
                                       None, None, angle,
         recolor_image(BaseProjectile.normal_image3, "Red"),  team=Teams.ENEMY)
     
@@ -289,11 +289,11 @@ class BasicBossMovementScript(CoroutineScript):
                             continue
                         if BasicBossMovementScript.predict_projectile_contact(
                         unit, proj, pygame.Vector2(direction * SPEED, 0), bounding_box):
-                            dodge_cooldown.set_duration(0.5 if distance_to_margin > 200 else 1.0 )
+                            dodge_cooldown.set_duration(0.75 if distance_to_margin > 200 else 1.25 )
                             if distance_to_margin < 100:
-                                luck = 5
+                                luck = 4
                             else:
-                                luck = 8
+                                luck = 7
                             if random.randint(1, 10) <= luck:
                                 direction *= -1
             delta = yield
@@ -469,7 +469,7 @@ class GoldenBoss(BaseBoss):
         homing_targets=Player, team=Teams.ENEMY, destructible=True)
     
     def fire_normal_projectile(self, angle : float = 0) -> NormalProjectile:
-        return NormalProjectile.spawn(self.position + pygame.Vector2(0, self.rect.height // 2 + 10), pygame.Vector2(0, 8).rotate(angle), 
+        return NormalProjectile.spawn(self.position + pygame.Vector2(0, self.rect.height // 2 - 10), pygame.Vector2(0, 8).rotate(angle), 
                                       None, None, 0,
         recolor_image(BaseProjectile.normal_image3, "Red"),  team=Teams.ENEMY)
     
@@ -620,11 +620,11 @@ class GoldenBossMovementScript(CoroutineScript):
                             continue
                         if GoldenBossMovementScript.predict_projectile_contact(
                         unit, proj, pygame.Vector2(direction * SPEED, 0), bounding_box):
-                            dodge_cooldown.set_duration(0.5 if distance_to_margin > 200 else 0.75 )
+                            dodge_cooldown.set_duration(0.6 if distance_to_margin > 200 else 0.9 )
                             if distance_to_margin < 100:
-                                luck = 6
+                                luck = 5
                             else:
-                                luck = 8
+                                luck = 7
                             if random.randint(1, 10) <= luck:
                                 direction *= -1
             delta = yield
