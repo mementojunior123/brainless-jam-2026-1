@@ -829,7 +829,7 @@ class ShopControlScript(CoroutineScript):
                     case 0:
                         result.append((f"On hit, the\nlazer splits in\nfour projectiles that\ndeal half damage.", 100, DEFAULT_FONT_SIZE, "White"))
                     case 1:
-                        result.append((f"The lazer now\nsplits one more time\nand conservs 65%\n of the damage\neach split.", 100, DEFAULT_FONT_SIZE, "White"))
+                        result.append((f"The lazer now\nsplits one more time\nand conserves 65%\n of the damage\neach split.", 100, DEFAULT_FONT_SIZE, "White"))
                     case 2:
                         result.append((f"The lazer now\nno longer loses damage\neach split and\ndeals 50% more damage.", 100, DEFAULT_FONT_SIZE, "White"))
                 return result
