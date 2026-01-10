@@ -14,6 +14,8 @@ You also get major upgrades right before the final boss
 -Improve weapon descriptions and make sure they are up to date
 -Clarify some things about how the game works (dashing giving i-frames, upgrades applying to future alternate fires, etc.)
 -Remove some player ui elements on player death
+-Improve text aligment on weapon descriptions
+
 -Add a fourth enemy type
 -Do a lot of balancing
 
