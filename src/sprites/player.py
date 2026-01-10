@@ -348,11 +348,11 @@ class Player(Sprite):
         damage_mod : float
         if self.upgrades['LazerSpecialist'] >= 3:
             damage_decay = 1.0
-            damage_mod = 1.0
+            damage_mod = 1.5
             scatter_count = 2
             proj_count = 4
         if self.upgrades['LazerSpecialist'] >= 2:
-            damage_decay = 0.5
+            damage_decay = 0.65
             damage_mod = 1.0
             scatter_count = 2
             proj_count = 4
@@ -387,7 +387,7 @@ class Player(Sprite):
     
     def fire_rocket(self, damage : float) -> HomingProjectile:
         explosive_range : float = 350 if self.upgrades['RocketSpecialist'] >= 1 else 250
-        aoe_fraction : float = 0.65 if self.upgrades['RocketSpecialist'] >= 1 else 0.50
+        aoe_fraction : float = 0.75 if self.upgrades['RocketSpecialist'] >= 1 else 0.50
         core_object.bg_manager.play_sfx(Player.rocket_shot_sfx, 1.0)
         return HomingProjectile.spawn(self.position + pygame.Vector2(0, -30), 
                                       pygame.Vector2(0, -10), 
