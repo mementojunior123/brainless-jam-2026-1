@@ -45,3 +45,6 @@ Version J12 (11-01-2026, 11:32):
     -Reduced difficulty again
     -Made a few QOL changes
     -Added a help tab in the menu
+
+Version J13 (11-01-2026, 11:37):
+    -Increased difficulty in waves 11-20
