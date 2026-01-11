@@ -223,7 +223,7 @@ class BasicEnemyControlScript(CoroutineScript):
                 unit.position += pygame.Vector2(0, BasicEnemy.APPROCH_RATE)
             if shot_timer.isover():
                 unit.fire_normal_projectile()
-                shot_timer.set_duration(random.uniform(1.7, 3))
+                shot_timer.set_duration(random.uniform(3, 5))
             delta = yield
 
 class EliteEnemy(BaseNormalEnemy):
@@ -335,7 +335,7 @@ class EliteEnemyControlScript(CoroutineScript):
                 unit.position += pygame.Vector2(0, EliteEnemy.APPROCH_RATE)
             if shot_timer.isover():
                 unit.fire_normal_projectile()
-                shot_timer.set_duration(random.uniform(0.5, 1.5))
+                shot_timer.set_duration(random.uniform(1.0, 2.5))
             delta = yield
 
 class GunnerEnemy(BaseNormalEnemy):
@@ -552,7 +552,7 @@ class GunnerEnemyShootingScript(CoroutineScript):
                 unit.fire_normal_projectile()
                 min_shot_cooldown.restart()
                 current_aggro = 0
-                aggro_required = random.uniform(40, 80)
+                aggro_required = random.uniform(60, 120)
             delta = yield
 
 class RunnerEnemy(BaseNormalEnemy):
