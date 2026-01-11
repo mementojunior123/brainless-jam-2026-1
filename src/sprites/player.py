@@ -355,11 +355,11 @@ class Player(Sprite):
         proj_count : int
         damage_decay : float
         if self.upgrades['LazerSpecialist'] >= 3:
-            damage_decay = 1.2
+            damage_decay = 1.0
             scatter_count = 2
             proj_count = 4
         elif self.upgrades['LazerSpecialist'] >= 2:
-            damage_decay = 0.65
+            damage_decay = 0.5
             scatter_count = 2
             proj_count = 4
         elif self.upgrades['LazerSpecialist'] >= 1:

@@ -856,9 +856,9 @@ class ShopControlScript(CoroutineScript):
                     case 0:
                         text = f"On hit, the\nlazer splits in\nfour projectiles that\ndeal half damage."
                     case 1:
-                        text = f"The lazer now\nsplits one more time\nand conserves 65%\n of the damage\neach split."
+                        text = f"The lazer now\nsplits one more time,\nconserving 50%\nof the damage\neach split."
                     case 2:
-                        text = f"Instead of losing\n35% of the damage,\nthe lazer deals 20%\nmore damage each split."
+                        text = f"The lazer no\nlonger loses damage\neach split."
                 for i, line in enumerate(text.split('\n')):
                     result.append((line, 100 + (DEFAULT_FONT_SIZE + 1) * i, DEFAULT_FONT_SIZE, "White"))
                 return result
