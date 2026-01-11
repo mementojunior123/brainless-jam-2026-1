@@ -138,7 +138,7 @@ WAVE_DATA : dict[int, WaveData] = {
 
     7 : {
         'enemies' : {
-            'basic' : 7,
+            'basic' : 5,
             'elite' : 9,
             'gunner' : 5,
             'runner' : 3,
@@ -150,21 +150,21 @@ WAVE_DATA : dict[int, WaveData] = {
 
     8 : {
         'enemies' : {
-            'basic' : 6,
-            'elite' : 12,
-            'gunner' : 6,
+            'basic' : 5,
+            'elite' : 10,
+            'gunner' : 5,
             'runner' : 3,
         },
         "spawn_cooldown" : 2.0,
-        "spawn_rate_penalty_per_enemy" : 0.9,
+        "spawn_rate_penalty_per_enemy" : 0.8,
         'bosses' : []
     },
 
     9 : {
         'enemies' : {
-            'basic' : 7,
-            'elite' : 14,
-            'gunner' : 7,
+            'basic' : 6,
+            'elite' : 12,
+            'gunner' : 5,
             'runner' : 3,
         },
         "spawn_cooldown" : 1.9,
@@ -174,38 +174,36 @@ WAVE_DATA : dict[int, WaveData] = {
 
     10 : {
         'enemies' : {
-            'basic' : 9,
-            'elite' : 15,
-            'gunner' : 7,
+            'basic' : 7,
+            'elite' : 13,
+            'gunner' : 6,
             'runner' : 4,
         },
         "spawn_cooldown" : 1.8,
-        "spawn_rate_penalty_per_enemy" : 0.8,
+        "spawn_rate_penalty_per_enemy" : 0.7,
         'bosses' : ['golden_boss']
     },
 
     11 : {
         'enemies' : {
-            'basic' : 9,
-            'elite' : 18,
-            'gunner' : 9,
-            'runner' : 5,
-            'basic_boss' : 1,
+            'basic' : 8,
+            'elite' : 16,
+            'gunner' : 8,
+            'runner' : 4,
         },
-        "spawn_cooldown" : 1.7,
+        "spawn_cooldown" : 1.5,
         "spawn_rate_penalty_per_enemy" : 0.6,
         'bosses' : []
     },
 
     12 : {
         'enemies' : {
-            'basic' : 10,
-            'elite' : 20,
-            'gunner' : 10,
-            'runner' : 6,
-            'basic_boss' : 1
+            'basic' : 9,
+            'elite' : 18,
+            'gunner' : 9,
+            'runner' : 5,
         },
-        "spawn_cooldown" : 1.7,
+        "spawn_cooldown" : 1.5,
         "spawn_rate_penalty_per_enemy" : 0.5,
         'bosses' : []
     },
@@ -213,13 +211,13 @@ WAVE_DATA : dict[int, WaveData] = {
 
     13 : {
         'enemies' : {
-            'basic' : 12,
-            'elite' : 24,
-            'gunner' : 12,
-            'runner' : 7,
-            'golden_boss' : 1
+            'basic' : 10,
+            'elite' : 20,
+            'gunner' : 10,
+            'runner' : 5,
+            'basic_boss' : 1
         },
-        "spawn_cooldown" : 1.6,
+        "spawn_cooldown" : 1.4,
         "spawn_rate_penalty_per_enemy" : 0.4,
         'bosses' : []
     },
@@ -227,51 +225,51 @@ WAVE_DATA : dict[int, WaveData] = {
 
     14 : {
         'enemies' : {
-            'basic' : 14,
-            'elite' : 28,
-            'gunner' : 14,
-            'runner' : 8,
+            'basic' : 11,
+            'elite' : 22,
+            'gunner' : 11,
+            'runner' : 5,
             'golden_boss' : 1
         },
-        "spawn_cooldown" : 1.5,
+        "spawn_cooldown" : 1.4,
         "spawn_rate_penalty_per_enemy" : 0.3,
         'bosses' : []
     },
 
     15 : {
         'enemies' : {
-            'basic' : 15,
-            'elite' : 30,
-            'gunner' : 15,
-            'runner' : 9,
+            'basic' : 12,
+            'elite' : 24,
+            'gunner' : 12,
+            'runner' : 6,
             'basic_boss' : 1,
             'golden_boss' : 1
         },
-        "spawn_cooldown" : 1.4,
+        "spawn_cooldown" : 1.3,
         "spawn_rate_penalty_per_enemy" : 0.2,
         'bosses' : ['spaceship_boss']
     },
 
         16 : {
         'enemies' : {
-            'basic' : 18,
-            'elite' : 36,
-            'gunner' : 18,
-            'runner' : 9,
+            'basic' : 15,
+            'elite' : 30,
+            'gunner' : 15,
+            'runner' : 7,
             'basic_boss' : 1,
             'golden_boss' : 1,
         },
-        "spawn_cooldown" : 1.3,
+        "spawn_cooldown" : 1.2,
         "spawn_rate_penalty_per_enemy" : 0.15,
         'bosses' : []
     },
 
     17 : {
         'enemies' : {
-            'basic' : 18,
-            'elite' : 36,
-            'gunner' : 18,
-            'runner' : 9,
+            'basic' : 17,
+            'elite' : 34,
+            'gunner' : 17,
+            'runner' : 8,
             'basic_boss' : 2,
             'golden_boss' : 1,
         },
@@ -283,10 +281,10 @@ WAVE_DATA : dict[int, WaveData] = {
 
     18 : {
         'enemies' : {
-            'basic' : 20,
-            'elite' : 40,
-            'gunner' : 20,
-            'runner' : 10,
+            'basic' : 18,
+            'elite' : 36,
+            'gunner' : 18,
+            'runner' : 9,
             'basic_boss' : 2,
             'golden_boss' : 2,
         },
@@ -298,10 +296,10 @@ WAVE_DATA : dict[int, WaveData] = {
 
     19 : {
         'enemies' : {
-            'basic' : 22,
-            'elite' : 44,
-            'gunner' : 22,
-            'runner' : 11,
+            'basic' : 21,
+            'elite' : 42,
+            'gunner' : 21,
+            'runner' : 10,
             'basic_boss' : 2,
             'golden_boss' : 2,
         },
@@ -313,8 +311,8 @@ WAVE_DATA : dict[int, WaveData] = {
     20 : {
         'enemies' : {
             'basic' : 20,
-            'elite' : 50,
-            'gunner' : 25,
+            'elite' : 48,
+            'gunner' : 24,
             'runner' : 12,
             'basic_boss' : 3,
             'golden_boss' : 2,
@@ -605,13 +603,13 @@ class ShopGameState(NormalGameState):
         section : int = (self.finished_wave - 1) // 5
         if self.finished_wave % 5 != 0:
             candidates = {
-                'RegularDamageBonus' : [0.5, 0.5, 0.5, 0.5][section],
-                'SpecialDamageMultipler' : [0.4, 0.4, 0.4, 0.4][section],
-                'AllDamageMultiplier' : [0.2, 0.2, 0.2, 0.2][section],
+                'RegularDamageBonus' : [0.4, 0.4, 0.4, 0.4][section],
+                'SpecialDamageMultipler' : [0.3, 0.3, 0.3, 0.3][section],
+                'AllDamageMultiplier' : [0.15, 0.15, 0.15, 0.15][section],
 
-                'RegularFirerateMultiplier' : [0.3, 0.3, 0.3, 0.3][section],
-                'SpecialFirerateMultiplier' : [0.3, 0.3, 0.3, 0.3][section],
-                'AllFirerateMultiplier' : [0.15, 0.15, 0.15, 0.15][section],
+                'RegularFirerateMultiplier' : [0.2, 0.2, 0.2, 0.2][section],
+                'SpecialFirerateMultiplier' : [0.2, 0.2, 0.2, 0.2][section],
+                'AllFirerateMultiplier' : [0.1, 0.1, 0.1, 0.1][section],
 
                 'MaxHealthBonus' : 1,
                 'HealHealth' : [2, 2, 3, 3][section],
