@@ -478,11 +478,11 @@ class BasicWaveControlScript(CoroutineScript):
             RunnerEnemy.spawn("midbottom", pygame.Vector2(x_level, -20))
         elif enemy_type == BossTypes.BASIC_BOSS.value:
             boss = BasicBoss.spawn()
-            boss.max_hp = boss.max_hp // 1.5
+            boss.max_hp = boss.max_hp // 1.0
             boss.health = boss.max_hp
         elif enemy_type == BossTypes.GOLDEN_BOSS.value:
             boss = GoldenBoss.spawn()
-            boss.max_hp = boss.max_hp // 2
+            boss.max_hp = boss.max_hp // 2.5
             boss.health = boss.max_hp
         elif enemy_type == BossTypes.SPACESHIP_BOSS.value:
             boss = SpaceshipBoss.spawn()
