@@ -40,3 +40,8 @@ Version J10 (10-01-2026, 15:42):
 
 Version J11 (10-01-2026, 16:09)
     -Made a few more tweaks related to difficulty
+
+Version J12 (11-01-2026, 10:01):
+    -Reduced difficulty again
+    -Made a few QOL changes
+    -Added a help tab in the menu

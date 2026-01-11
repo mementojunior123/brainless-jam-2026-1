@@ -192,8 +192,8 @@ class Player(Sprite):
         element.current_hp = element.max_hp
         element.can_shoot = True
         element.upgrades = Player.get_default_upgrades()
-        element.invuln_timer = Timer(1.0, core_object.game.game_timer.get_time)
-        element.invuln_timer.start_time -= 1.0
+        element.invuln_timer = Timer(1.5, core_object.game.game_timer.get_time)
+        element.invuln_timer.start_time -= 1.5
         element.invincible = False
         element.ui_hearts = []
         element.update_hearts()

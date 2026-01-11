@@ -1124,7 +1124,7 @@ class SpaceshipBossBasicShootingScript(CoroutineScript):
                 unit.fire_normal_projectile()
                 min_shot_cooldown.restart()
                 current_aggro = 0
-                aggro_required = random.uniform(30, 60)
+                aggro_required = random.uniform(45, 75)
             delta = yield
 
 class SpaceshipBossSpecialShotScript(CoroutineScript):
@@ -1182,7 +1182,7 @@ class SpaceshipBossSpecialShotScript(CoroutineScript):
         if delta is None: delta = core_object.dt
         while True:
             proximity_buff : float = SpaceshipBossBasicShootingScript.player_proximity_buff(abs(unit.position.x - player.position.x) if player else 999)
-            current_aggro +=  delta * proximity_buff
+            current_aggro +=  delta * proximity_buff * SpaceshipBossBasicShootingScript.enemy_count_debuff()
             if min_shot_cooldown.isover() and current_aggro >= aggro_required:
                 angle_offset : float = (pygame.Vector2(0, 1).angle_to(player.position - unit.position))
                 fired_rocket : bool = random.randint(1, 5) <= 2
@@ -1233,8 +1233,8 @@ class SpaceshipBossSummonScript(CoroutineScript):
         while not delay.isover():
             delta = yield
         
-        cooldown_timer : Timer = Timer(0.4, time_source)
-        for _ in range(10):
+        cooldown_timer : Timer = Timer(0.5, time_source)
+        for _ in range(7):
             while not cooldown_timer.isover():
                 delta = yield
             cooldown_timer.restart()
@@ -1697,7 +1697,7 @@ class FinalBossSpecialShotScript(CoroutineScript):
         if delta is None: delta = core_object.dt
         while True:
             proximity_buff : float = FinalBossBasicShootingScript.player_proximity_buff(abs(unit.position.x - player.position.x) if player else 999)
-            current_aggro +=  delta * proximity_buff
+            current_aggro +=  delta * proximity_buff * FinalBossBasicShootingScript.enemy_count_debuff()
             if min_shot_cooldown.isover() and current_aggro >= aggro_required:
                 angle_offset : float = (pygame.Vector2(0, 1).angle_to(player.position - unit.position))
                 fired_rocket : bool = True if random.randint(1, 4) <= 2 else False
@@ -1751,8 +1751,8 @@ class FinalBossSummonScript(CoroutineScript):
         b1 = BasicBoss.spawn()
         b1.max_hp /= 3.5
         b1.health = b1.max_hp
-        cooldown_timer : Timer = Timer(0.4, time_source)
-        for _ in range(10):
+        cooldown_timer : Timer = Timer(0.5, time_source)
+        for _ in range(8):
             while not cooldown_timer.isover():
                 delta = yield
             cooldown_timer.restart()
