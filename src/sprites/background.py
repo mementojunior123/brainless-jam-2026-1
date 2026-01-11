@@ -17,33 +17,33 @@ class Background(Sprite):
         Background.inactive_elements.append(self)
 
     @classmethod
-    def spawn(cls, top : int):
+    def spawn(cls, bottom : int):
         element = cls.inactive_elements[0]
 
         element.image = cls.default_image
         element.rect = element.image.get_rect()
 
         element.position = pygame.Vector2(0, 0)
-        element.move_rect("midtop", pygame.Vector2(Background.display_size[0] // 2, top))
+        element.move_rect("midbottom", pygame.Vector2(Background.display_size[0] // 2, bottom))
         element.zindex = -1000
         element.current_camera = core_object.game.main_camera
         cls.unpool(element)
         return element
 
     def update(self, delta: float):
-        pass
+        print(self.rect)
     
     @classmethod
     def update_class(cls, delta : float):
         if not cls.active_elements:
             return
-        cls.active_elements.sort(key = lambda b : b.rect.bottom)
+        cls.active_elements.sort(key = lambda b : b.rect.top, reverse=True)
         i : int = 0
         while i < len(cls.active_elements):
             frontrunner : Background = cls.active_elements[i]
-            frontrunner.position += pygame.Vector2(0, -cls.BACKGROUND_SPEED) * delta
+            frontrunner.position += pygame.Vector2(0, cls.BACKGROUND_SPEED) * delta
             frontrunner.align_rect()
-            if frontrunner.rect.bottom < 0:
+            if frontrunner.rect.top >= Background.display_size[1]:
                 frontrunner.kill_instance()
             else:
                 break
@@ -51,12 +51,12 @@ class Background(Sprite):
             if i == 0:
                 continue
             prev_background : Background = cls.active_elements[i - 1]
-            if prev_background.rect.bottom < 0:
+            if prev_background.rect.top >= Background.display_size[1] or prev_background.rect.top < 0:
                 continue
-            element.move_rect("top", prev_background.rect.bottom)
-        lowest_background : int = max([element.rect.bottom for element in cls.active_elements if not element._zombie])
-        if lowest_background < cls.display_size[1] and cls.SPAWN_BACKGROUND:
-            cls.spawn(lowest_background)
+            element.move_rect("bottom", prev_background.rect.top)
+        highest_background : int = min([element.rect.top for element in cls.active_elements if not element._zombie])
+        if highest_background > 0 and cls.SPAWN_BACKGROUND:
+            cls.spawn(highest_background)
     
     def clean_instance(self):
         self.image = None

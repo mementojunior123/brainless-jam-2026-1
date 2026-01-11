@@ -384,10 +384,10 @@ class MainGameState(NormalGameState):
             self.score += event.score
 
     def spawn_background(self):
-        bg = Background.spawn(0)
+        bg = Background.spawn(core_object.main_display.get_size()[1])
         while True:
-            if bg.rect.bottom < core_object.main_display.get_size()[1]:
-                bg = Background.spawn(bg.rect.bottom)
+            if bg.rect.top > 0:
+                bg = Background.spawn(bg.rect.top)
             else:
                 break
 
