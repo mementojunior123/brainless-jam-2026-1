@@ -16,32 +16,27 @@ from typing import Callable
 def noop():
     pass
 
-test_list : list[str] = ['up', 'right', 'showdown', 'critical', 'double-up', 'switch', 'fake-run', 'remontada']
-class TestUiGroup(UiSpriteGroup):
-    """A demonstration of UiSpriteGroup."""
-    base_name = 'TestGroup'
+tip_list : list[str] = [
+'''Dashing makes you invincible for a short period of time.\nTry to use it when you are cornered.''',
+'''Dashing allows you to kill enemies that make it to the back row.\nUseful against runners (red enemies)!''',
+'''Picking a new alternate fire does not reset
+special attack and special firerate bonuses.
+Weapon specialist upgrades, however, only apply to that specific weapon.'''
+]
+class TipUiGroup(UiSpriteGroup):
+    base_name = 'TipUiGroup'
     def __init__(self, *args : tuple[UiSprite], serial : str = '', center : pygame.Vector2 = pygame.Vector2(480, 270)):
         super().__init__(*args, serial=serial)
         self.center = center
     
     @staticmethod
-    def new_group(page : int, sep : int = 4, center = pygame.Vector2(480, 270)) -> 'TestUiGroup':
+    def new_group(index : int = 0, alignment : str = 'midtop', position : pygame.Vector2|None = None) -> 'TipUiGroup':
         """Constructor for UiSpriteGroup."""
-        start_index : int = sep * page
-        end_index : int = sep * (page + 1)
-        name_amount : int = len(test_list)
-        if start_index >= name_amount:
-            raise ValueError('Page does not exist')
-        if end_index > name_amount: end_index = name_amount
-        name_list : list[str] = test_list[start_index: end_index]
-        elements : list[TextSprite] = []
-        aligments = [(pygame.Vector2(-200, -200), 'topleft'), (pygame.Vector2(200, -200), 'topright'), 
-                     (pygame.Vector2(-200, 200), 'bottomleft'),(pygame.Vector2(200, 200), 'bottomright')]
-        for text, aligment in zip(name_list, aligments):
-            new_sprite = TextSprite(center + aligment[0], aligment[1], 0, text, None, text_settings=(BaseMenu.font_50, 'White', False),
-                                    text_stroke_settings=('Black', 2), colorkey=(0, 255, 0))
-            elements.append(new_sprite)
-        return TestUiGroup(*elements, serial=f'')
+        position = position or pygame.Vector2(480, 100)
+        elements = []
+        for i, line in enumerate(tip_list[index].split('\n')):
+            elements.append(TextSprite(position + pygame.Vector2(0, 40) * i, alignment, -1, line))
+        return TipUiGroup(*elements, serial=f'')
 
             
 
@@ -94,8 +89,20 @@ class Menu(BaseMenu):
         BaseUiElements.new_text_sprite('P to pause', (Menu.font_50, 'Black', False), 0, 'midleft', (15, centery + 125)),
         TextSprite(pygame.Vector2(window_size[0] - 15, centery), 'midright', 0,
         f'High score : {core_object.storage.high_score}', name='highscore_text', text_settings=(Menu.font_50, 'Black', False)),
-        BaseUiElements.new_button('RedButton', 'Reset', 1, 'bottomright', (window_size[0] - 15, window_size[1] - 15), (0.5, 1.4), 
-        {'name' : 'reset_button'}, (Menu.font_40, 'Black', False))
+        BaseUiElements.new_button('RedButton', 'Reset', 1, 'bottomleft', (15, window_size[1] - 15), (0.5, 1.4), 
+        {'name' : 'reset_button'}, (Menu.font_40, 'Black', False)),
+        BaseUiElements.new_button('BlueButton', 'Help', 1, 'bottomright', (window_size[0] - 15, window_size[1] - 15), (0.5, 1.4), 
+        {'name' : 'help_button'}, (Menu.font_40, 'Black', False)),
+        ],
+        [
+        BaseUiElements.new_button('BlueButton', 'Back', 1, 'topleft', (15, 15), (0.5, 1.4), 
+        {'name' : 'back_button'}, (Menu.font_40, 'Black', False)),
+        BaseUiElements.new_button('BlueButton', 'Next', 1, 'bottomright', (window_size[0] - 15, window_size[1] - 15), (0.5, 1.4), 
+        {'name' : 'next_button'}, (Menu.font_40, 'Black', False)),
+        BaseUiElements.new_button('BlueButton', 'Prev', 1, 'bottomleft', (15, window_size[1] - 15), (0.5, 1.4), 
+        {'name' : 'prev_button'}, (Menu.font_40, 'Black', False)),
+        TextSprite(pygame.Vector2(window_size[0] - 15, 15), 'topright', 0,
+        f'1/{len(tip_list)}', name='tip_counter_text', text_settings=(Menu.font_50, 'Black', False)),
         ]
         ]
         self.bg_color = (94, 129, 162)
@@ -104,25 +111,27 @@ class Menu(BaseMenu):
     def enter_stage2(self):
         self.stage = 2
         sep : int = 4
-        self.stage_data[2]['current_page'] = 0
-        self.stage_data[2]['max_pages'] = ceil(len(test_list) / sep)
-        self.stages[2].append(TestUiGroup.new_group(0))
+        self.stage_data[2]['current_tip'] = 0
+        self.stage_data[2]['max_tips'] = len(tip_list)
+        self.stages[2].append(TipUiGroup.new_group(0))
+        self.get_sprite_by_name(2, 'tip_counter_text').text = f'{1}/{len(tip_list)}'
     
-    def change_page_stage2(self, new_page : int):
-        self.stage_data[2]['current_page'] = new_page
-        self.find_and_replace(TestUiGroup.new_group(new_page), 2, name='TestGroup')
+    def change_tip_stage2(self, new_tip_index : int):
+        self.stage_data[2]['current_tip'] = new_tip_index
+        self.find_and_replace(TipUiGroup.new_group(new_tip_index), 2, name='TipUiGroup')
+        self.get_sprite_by_name(2, 'tip_counter_text').text = f'{new_tip_index + 1}/{len(tip_list)}'
     
-    def increment_page_stage2(self):
-        new_page : int = (self.stage_data[2]['current_page'] + 1) % self.stage_data[2]['max_pages']
-        self.change_page_stage2(new_page)
+    def increment_tip_stage2(self):
+        new_tip_index : int = (self.stage_data[2]['current_tip'] + 1) % self.stage_data[2]['max_tips']
+        self.change_tip_stage2(new_tip_index)
 
-    def decrement_page_stage2(self):
-        new_page : int = (self.stage_data[2]['current_page'] - 1) % self.stage_data[2]['max_pages']
-        self.change_page_stage2(new_page)
+    def decrement_tip_stage2(self):
+        new_tip_index : int = (self.stage_data[2]['current_tip'] - 1) % self.stage_data[2]['max_tips']
+        self.change_tip_stage2(new_tip_index)
     
     def exit_stage2(self):
         self.stage_data[2].clear()
-        self.remove_sprite(2, name='TestGroup')
+        self.remove_sprite(2, name='TipUiGroup')
     
     def update(self, delta : float):
         """
@@ -155,14 +164,14 @@ class Menu(BaseMenu):
                     core_object.storage.reset()
                     core_object.storage.save(core_object.is_web())
                     self.update_high_score()
-                if name == 'test_button':
+                if name == 'help_button':
                     self.goto_stage(2)
             case 2:
                 if name == 'back_button':
                     self.goto_stage(1)
                 elif name == 'prev_button':
-                    self.decrement_page_stage2()
+                    self.decrement_tip_stage2()
                 elif name == 'next_button':
-                    self.increment_page_stage2()
+                    self.increment_tip_stage2()
 
 # TODO : Document the menu API (general workflow, interactivity, etc.)
