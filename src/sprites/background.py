@@ -31,7 +31,7 @@ class Background(Sprite):
         return element
 
     def update(self, delta: float):
-        print(self.rect)
+        pass
     
     @classmethod
     def update_class(cls, delta : float):

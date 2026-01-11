@@ -493,7 +493,7 @@ class Player(Sprite):
     
     def handle_key_event(self, event : pygame.Event):
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LSHIFT:
+            if event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
                 self.attempt_dash()
 
     @classmethod
