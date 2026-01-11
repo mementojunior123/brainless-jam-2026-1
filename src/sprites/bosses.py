@@ -410,7 +410,7 @@ class GoldenBoss(BaseBoss):
         element.current_camera = core_object.game.main_camera
 
         element.type = 'golden_boss'
-        element.max_hp = 150
+        element.max_hp = 200
         element.health = element.max_hp
         element.health_bar = element.create_healthbar_visual()
         element.update_healthbar_visual()
@@ -677,7 +677,7 @@ class GoldenBossShootingScript(CoroutineScript):
                 unit.fire_normal_projectile()
                 min_shot_cooldown.restart()
                 current_aggro = 0
-                aggro_required = random.uniform(50, 100)
+                aggro_required = random.uniform(40, 70)
             delta = yield
 
 class GoldenBossHomingShotScript(CoroutineScript):
