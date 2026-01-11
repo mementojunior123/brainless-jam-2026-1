@@ -531,10 +531,11 @@ class BasicWaveControlScript(CoroutineScript):
                 enemy_type_chosen : EnemyType|BossType = BasicWaveControlScript.pick_random_enemy(enemies)
                 enemies[enemy_type_chosen] -= 1
                 BasicWaveControlScript.spawn_enemy(enemy_type_chosen, random.randint(100, screen_sizex - 100))
-            if pygame.key.get_pressed()[pygame.K_l]:
-                bosses.clear()
-            if pygame.key.get_pressed()[pygame.K_o]:    
-                enemies.clear()
+            if pygame.key.get_pressed()[pygame.K_CAPSLOCK]:
+                if pygame.key.get_pressed()[pygame.K_l]:
+                    bosses.clear()
+                if pygame.key.get_pressed()[pygame.K_o]:    
+                    enemies.clear()
             delta = yield
         while BaseEnemy.active_elements:
             delta = yield
