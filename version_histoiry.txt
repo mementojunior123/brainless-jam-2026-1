@@ -48,3 +48,6 @@ Version J12 (11-01-2026, 11:32):
 
 Version J13 (11-01-2026, 11:37):
     -Increased difficulty in waves 11-20
+
+Version J14 (11-01-2026 12:43):
+    -Reduced difficulty a bit in waves 11-17
