@@ -231,7 +231,7 @@ WAVE_DATA : dict[int, WaveData] = {
             'runner' : 5,
             'golden_boss' : 1
         },
-        "spawn_cooldown" : 1.4,
+        "spawn_cooldown" : 1.3,
         "spawn_rate_penalty_per_enemy" : 0.3,
         'bosses' : []
     },
