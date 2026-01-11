@@ -28,6 +28,9 @@ class BaseEnemy(Sprite):
     enemy_killed_sfx : pygame.mixer.Sound = pygame.mixer.Sound("assets/audio/sfx/enemy_killed2.ogg")
     enemy_killed_sfx.set_volume(0.50)
     KILL_SCORE : int = 5
+
+    health_epsilon : float = 0.01
+
     def __init__(self) -> None:
         super().__init__()
         self.type : EnemyType|BossType
@@ -67,7 +70,7 @@ class BaseEnemy(Sprite):
         self.take_damage(projectile.damage)
         overlap_point : tuple[int, int] = self.mask.overlap(projectile.mask, (projectile.rect.x - self.rect.x, projectile.rect.y - self.rect.y))
         point_of_contact : pygame.Vector2 = (pygame.Vector2(self.rect.topleft) + overlap_point)
-        if self.health <= 0:
+        if self.health <= BaseEnemy.health_epsilon:
             self.kill_instance_safe()
             ParticleEffect.load_effect('enemy_killed').play(self.position.copy(), core_object.game.game_timer.get_time)
             core_object.bg_manager.play_sfx(BaseEnemy.enemy_killed_sfx, 1.0)

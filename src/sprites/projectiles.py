@@ -260,7 +260,7 @@ class HomingProjectile(BaseProjectile):
                 if (self.position - enemy.position).magnitude() < self.explosive_range:
                     enemy.take_damage(self.explosive_damage)
                     enemy.give_score(1)
-                    if enemy.health < 0:
+                    if enemy.health <= BaseEnemy.health_epsilon:
                         if isinstance(enemy, BaseNormalEnemy):
                             enemy.kill_instance_safe()
                             got_a_kill = True
