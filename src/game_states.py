@@ -190,6 +190,8 @@ WAVE_DATA : dict[int, WaveData] = {
             'elite' : 16,
             'gunner' : 8,
             'runner' : 4,
+            'basic_boss' : 1
+            
         },
         "spawn_cooldown" : 1.6,
         "spawn_rate_penalty_per_enemy" : 0.5,
@@ -202,6 +204,7 @@ WAVE_DATA : dict[int, WaveData] = {
             'elite' : 18,
             'gunner' : 9,
             'runner' : 5,
+            'basic_boss' : 2
         },
         "spawn_cooldown" : 1.5,
         "spawn_rate_penalty_per_enemy" : 0.5,
@@ -215,7 +218,7 @@ WAVE_DATA : dict[int, WaveData] = {
             'elite' : 20,
             'gunner' : 10,
             'runner' : 5,
-            'basic_boss' : 1
+            'golden_boss' : 1
         },
         "spawn_cooldown" : 1.4,
         "spawn_rate_penalty_per_enemy" : 0.4,
