@@ -42,5 +42,8 @@ Bugs to fix:
     -Boss healthbar sometimes does not disappear properly
 
 Balancing to do:
-    -Add difficulty
+    -Add difficulties
     -Tune the alternate fires to be more in line with one another
+
+Other changes:
+    -Add an alternative keybind for dashing like [G]. More comfortable for players that are less experienced in video games.
