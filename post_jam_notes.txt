@@ -1,0 +1,46 @@
+---Before the results---
+    General thoughts:
+        (14-01-2026, 20:04)
+        I spent quite a lot of time on this game (as can probably be seen by the commit history).
+        I estimate about 50 hours were poured into this game in a week (January 5th-11th) and I think it shows,
+        especially compared to the other games I've made before (StormZ Day) that were made with less time and less experience.
+        Space Brawl : ~5000 lines of code
+        StormZ Day : ~3500 lines of code
+        I'm quite happy about the end result and the feedback I received. I think I will get a good rating this jam,
+        although there are quite a lot of other good games in this jam.
+    
+    Things I've done well:
+        -I put more effort into sound design, which makes the overall experience feel better.
+        -I made some original image assets, which, ironically, allowed me to save a bit of time.
+        -The core of the game was coded very cleany and efficently, which allowed me more time to work on content.
+        -I did some playtests before the start of the voting period, which allowed me tweak the difficulty and fix some bugs.
+    
+    Things I would've changed:
+        -Difficulties would've allowed players to experience more of the game on an engaging level.
+        -Put more focus on the start of the game, because that's the part of the game every player will experience.
+        Getting it right is very important because most players won't play your game for very long.
+        -Be a bit more dilligent with playtesting changes. I made a lot of balance changes to the alternate fires and
+        didn't test them, which lead to some of the being outclassed by others.
+    
+    Overall I feel like I have a good shot of getting a good placement. I doubt I'm going to win because there are a lot
+    of very good games.
+    Even if I don't win, I think this was a good opportunity because I get to see the progress I've made since my last
+    full game that I made in August 2024 (1.5 years ago!).
+
+---After the results---
+Connection to theme : Averaged ???/5 (placed ???th/322, top x%)
+Connection to theme : Averaged ???/5 (placed ???th/322, top x%)
+Connection to theme : Averaged ???/5 (placed ???th/322, top x%)
+Connection to theme : Averaged ???/5 (placed ???th/322, top x%)
+Connection to theme : Averaged ???/5 (placed ???th/322, top x%)
+
+Overall : placed ???th/322 (Averaged ???/5, top x%) 
+    My reaction to the results:
+
+=======================
+Bugs to fix:
+    -Boss healthbar sometimes does not disappear properly
+
+Balancing to do:
+    -Add difficulty
+    -Tune the alternate fires to be more in line with one another
