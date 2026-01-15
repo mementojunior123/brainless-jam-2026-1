@@ -3,7 +3,7 @@ import asyncio
 import traceback
 pygame.init()
 
-GAME_ICON = pygame.image.load('template_icon.png')
+GAME_ICON = pygame.image.load('assets/graphics/icon.png')
 GAME_TITLE : str = "Space Brawl"
 pygame.display.set_icon(GAME_ICON)
 

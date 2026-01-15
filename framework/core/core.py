@@ -21,6 +21,7 @@ import sys
 import platform
 from typing import Any, TypedDict, Callable
 from types import SimpleNamespace
+from sys import exit
 
 class JsSource(TypedDict):
     source : str
