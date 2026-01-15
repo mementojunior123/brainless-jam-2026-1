@@ -54,7 +54,8 @@ class Background(Sprite):
             if prev_background.rect.top >= Background.display_size[1] or prev_background.rect.top < 0:
                 continue
             element.move_rect("bottom", prev_background.rect.top)
-        highest_background : int = min([element.rect.top for element in cls.active_elements if not element._zombie])
+        tops = [element.rect.top for element in cls.active_elements if not element._zombie] or [0]
+        highest_background : int = min(tops)
         if highest_background > 0 and cls.SPAWN_BACKGROUND:
             cls.spawn(highest_background)
     
