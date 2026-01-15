@@ -8,7 +8,7 @@ GAME_TITLE : str = "Space Brawl"
 pygame.display.set_icon(GAME_ICON)
 
 window_size = (960, 540)
-window = pygame.display.set_mode(window_size)
+window = pygame.display.set_mode(window_size, pygame.SCALED)
 
 pygame.mixer.set_num_channels(64)
 

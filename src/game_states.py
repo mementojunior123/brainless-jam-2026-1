@@ -58,7 +58,7 @@ class NormalGameState(GameState):
     
     def handle_key_event(self, event : pygame.Event):
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_p:
+            if event.key == core_object.settings.keybind_pause:
                 self.pause()
 
 class WaveData(TypedDict):
@@ -1020,7 +1020,7 @@ class PausedGameState(GameState):
 
     def handle_key_event(self, event : pygame.Event):
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_p:
+            if event.key == core_object.settings.keybind_pause:
                 self.unpause()
 
 def runtime_imports():
