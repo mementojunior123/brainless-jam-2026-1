@@ -28,14 +28,20 @@
     full game that I made in August 2024 (1.5 years ago!).
 
 ---After the results---
-Connection to theme : Averaged ???/5 (placed ???th/322, top x%)
-Connection to theme : Averaged ???/5 (placed ???th/322, top x%)
-Connection to theme : Averaged ???/5 (placed ???th/322, top x%)
-Connection to theme : Averaged ???/5 (placed ???th/322, top x%)
-Connection to theme : Averaged ???/5 (placed ???th/322, top x%)
+Connection to theme : Averaged 3.333/5 (placed 133rd/315, top 42%)
+Enjoyment : Averaged 3.389/5 (placed 77th/315, top 24%)
+Presentation : Averaged 3/5 (placed 167th/315, top 53%)
+Gameplay : Averaged 3.333/5 (placed 57th/315, top 18%)
+Creativity : Averaged 2.667/5 (placed 200th/315, top 63%)
 
-Overall : placed ???th/322 (Averaged ???/5, top x%) 
-    My reaction to the results:
+Overall (using enjoyment) : placed 77th/315 (Averaged 3.389/5, top 24%) 
+         (using average)  : placed 127th/315 (Averaged 3.144/5, top 40%)
+
+    My reaction to the results (20-01-2026):
+        I'm honestly a bit disappointed. Given there are a lot of other good games in the jam,
+        this is a pretty fair result, but i expected my score to be a bit better.
+        In retrospect, i definitively didn't spend enough time on polishing the player experience.
+        Instead of adding more content, I should've made sure the gameplay loop felt good.
 
 =======================
 Bugs to fix:
